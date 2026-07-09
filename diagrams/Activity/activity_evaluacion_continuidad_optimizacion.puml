@@ -1,0 +1,45 @@
+@startuml "Activity: Evaluacion de continuidad y optimizacion"
+skinparam SwimlaneTitleBackgroundColor #EEE
+skinparam ActivityBackgroundColor #FFF9C4
+skinparam ActivityBorderColor #7A1631
+skinparam Arrow {
+  Color #7A1631
+}
+
+|Administrador de Proyectos|
+start
+:Solicita evaluacion de maquinaria alquilada;
+
+|WorkMeter|
+:Valida permisos por rol;
+if (Usuario autorizado?) then (Si)
+  :Obtiene contrato, uso efectivo y costos;
+  :Calcula horas inactivas y costo de inactividad;
+  :Evalua tendencias de uso;
+  if (Uso efectivo bajo umbral?) then (Si)
+    :Genera recomendacion de retiro o reemplazo;
+  else (No)
+    if (Contrato por vencer?) then (Si)
+      :Genera recomendacion de renovar;
+    else (No)
+      :Genera recomendacion de continuidad;
+    endif
+  endif
+  :Consolida ahorro potencial;
+  :Registra accion critica en auditoria;
+  |Direccion de la Constructora|
+  :Revisa recomendacion;
+  if (Aprueba decision?) then (Si)
+    |WorkMeter|
+    :Archiva decision de optimizacion;
+    stop
+  else (No)
+    :Solicita nuevo analisis;
+    stop
+  endif
+else (No)
+  :Deniega acceso;
+  :Registra intento en auditoria;
+  stop
+endif
+@enduml

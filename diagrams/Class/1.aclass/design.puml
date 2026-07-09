@@ -1,0 +1,16 @@
+@startuml "Class: WorkMeter Basic Classes"
+class Maquinaria {
+  codigo : String
+  tipo : String
+}
+
+class ContratoAlquiler {
+  tarifaHora : Decimal
+  fechaFin : Date
+}
+
+class Sensor {
+  identificador : String
+  estado : String
+}
+@enduml

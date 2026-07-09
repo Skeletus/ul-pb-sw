@@ -1,0 +1,44 @@
+@startuml "Activity: Generacion de reportes"
+skinparam SwimlaneTitleBackgroundColor #EEE
+skinparam ActivityBackgroundColor #FFF9C4
+skinparam ActivityBorderColor #7A1631
+skinparam Arrow {
+  Color #7A1631
+}
+
+|Administrador de Proyectos|
+start
+:Solicita reporte;
+
+|WorkMeter|
+:Valida permisos por rol;
+if (Usuario autorizado?) then (Si)
+  :Recibe filtros de obra, maquinaria y rango de fechas;
+  if (Filtros completos y rango valido?) then (Si)
+    :Consulta uso efectivo, costos e incidencias;
+    :Calcula costo de inactividad;
+    note right
+      Costo = horas inactivas acumuladas
+      * tarifa del contrato de alquiler
+    end note
+    :Consolida indicadores y tendencias;
+    if (Reporte final?) then (Si)
+      :Incluye ahorros, incidencias resueltas y recomendaciones;
+    else (No)
+      :Genera reporte operativo;
+    endif
+    :Exporta reporte;
+    :Registra accion critica en auditoria;
+    |Administrador de Proyectos|
+    :Descarga reporte;
+    stop
+  else (No)
+    :Solicita corregir filtros;
+    stop
+  endif
+else (No)
+  :Deniega acceso;
+  :Registra intento en auditoria;
+  stop
+endif
+@enduml

@@ -1,0 +1,34 @@
+@startuml "System Use Case: Evaluar continuidad y optimizar costos"
+left to right direction
+skinparam usecase {
+  BackgroundColor #FFF9C4
+  BorderColor #7A1631
+  StereotypeFontColor #2E7D32
+}
+skinparam actor {
+  BackgroundColor #FFF9C4
+  BorderColor #7A1631
+  StereotypeFontColor #2E7D32
+}
+skinparam Arrow {
+  Color #7A1631
+}
+
+actor "Usuario\nAutenticado" as Usuario
+actor "Administrador de\nProyectos" as Admin
+
+Admin --|> Usuario
+
+rectangle "Sistema WorkMeter" {
+  usecase "Costos y\noptimizacion" as UCCostos
+  usecase "Calcular costo de\ninactividad" as UCCalcular
+  usecase "Validar permisos\npor rol" as UCPermisos
+  usecase "Auditoria" as UCAuditoria
+}
+
+Usuario --> UCCostos
+
+UCCostos --> UCPermisos : <<include>>
+UCCostos --> UCCalcular : <<include>>
+UCCostos --> UCAuditoria : <<include>>
+@enduml

@@ -1,0 +1,8 @@
+@startuml "State: Report"
+[*] --> Generated
+Generated --> Exported : generate file
+Exported --> Downloaded : user downloads
+Downloaded --> Archived : preserve evidence
+Generated --> Archived : internal report
+Archived --> [*]
+@enduml

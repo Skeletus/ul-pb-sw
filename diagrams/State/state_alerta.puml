@@ -1,0 +1,8 @@
+@startuml "State: Alert"
+[*] --> New
+New --> UnderReview : supervisor reviews
+UnderReview --> Addressed : action recorded
+Addressed --> Closed : no pending risk
+New --> Closed : false positive
+Closed --> [*]
+@enduml

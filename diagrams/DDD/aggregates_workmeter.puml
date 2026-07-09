@@ -1,0 +1,52 @@
+@startuml "DDD: Aggregates WorkMeter"
+
+package "User Aggregate" {
+    class User <<AggregateRoot>>
+    class Role <<Entity>>
+    class Permission <<Entity>>
+    class Session <<Entity>>
+}
+
+package "Machine Aggregate" {
+    class Machine <<AggregateRoot>>
+    class MaintenanceHistory <<Entity>>
+}
+
+package "RentalContract Aggregate" {
+    class RentalContract <<AggregateRoot>>
+    class InactivityCost <<ValueObject>>
+}
+
+package "Sensor Aggregate" {
+    class Sensor <<AggregateRoot>>
+    class SensorReading <<Entity>>
+}
+
+package "Alert Aggregate" {
+    class Alert <<AggregateRoot>>
+    class Incident <<Entity>>
+    class Notification <<Entity>>
+}
+
+package "Report Aggregate" {
+    class Report <<AggregateRoot>>
+    class SavingsIndicator <<ValueObject>>
+    class UsageTrend <<ValueObject>>
+}
+
+package "Recommendation Aggregate" {
+    class Recommendation <<AggregateRoot>>
+}
+
+User "1" *-- "1..*" Role
+Role "1" -- "0..*" Permission
+User "1" *-- "0..*" Session
+Machine "1" *-- "0..*" MaintenanceHistory
+RentalContract "1" *-- "0..*" InactivityCost
+Sensor "1" *-- "0..*" SensorReading
+Alert "1" *-- "0..1" Incident
+Alert "1" *-- "0..*" Notification
+Report "1" *-- "0..*" SavingsIndicator
+Report "1" *-- "0..*" UsageTrend
+Report "1" --> "0..*" Recommendation
+@enduml

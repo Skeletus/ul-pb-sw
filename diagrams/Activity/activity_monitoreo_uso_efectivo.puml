@@ -1,0 +1,42 @@
+@startuml "Activity: Monitoreo de uso efectivo"
+skinparam SwimlaneTitleBackgroundColor #EEE
+skinparam ActivityBackgroundColor #FFF9C4
+skinparam ActivityBorderColor #7A1631
+skinparam Arrow {
+  Color #7A1631
+}
+
+|Sensor IoT|
+start
+:Captura vibracion y consumo energetico;
+:Envia lectura;
+
+|WorkMeter|
+:Valida lectura y sensor asociado;
+if (Lectura valida?) then (Si)
+  :Guarda lectura de sensor;
+  :Compara contra umbral operativo;
+  if (Vibracion o consumo bajo umbral?) then (Si)
+    :Acumula tiempo bajo umbral;
+    if (Tiempo bajo umbral > 5 minutos?) then (Si)
+      :Clasifica maquinaria como inactiva;
+    else (No)
+      :Mantiene estado en observacion;
+    endif
+  else (No)
+    :Clasifica maquinaria como activa;
+    :Reinicia contador de inactividad;
+  endif
+  :Actualiza dashboard e indicadores de uso;
+  if (Uso efectivo bajo umbral definido?) then (Si)
+    :Resalta maquinaria con baja utilizacion;
+  else (No)
+    :Mantiene visualizacion normal;
+  endif
+  stop
+else (No)
+  :Descarta lectura;
+  :Registra evento tecnico;
+  stop
+endif
+@enduml

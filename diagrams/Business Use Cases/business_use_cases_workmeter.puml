@@ -1,0 +1,43 @@
+@startuml "Business Use Cases: WorkMeter"
+left to right direction
+
+actor/ "Supervisor de\nObra" <<Business Worker>> as Supervisor
+actor/ "Administrador de\nProyectos" <<Business Worker>> as Admin
+actor/ "Direccion de la\nConstructora" <<Business Actor>> as Direccion
+actor/ "Sensor IoT" <<Business Actor>> as Sensor
+actor/ "Servicio de\nNotificaciones" <<Business Actor>> as Notificaciones
+
+usecase/ "Registrar maquinaria\ny contrato de alquiler" as BUC1
+usecase/ "Monitorear uso efectivo\nde maquinaria" as BUC2
+usecase/ "Gestionar alertas\ne incidencias" as BUC3
+usecase/ "Generar reportes\nde uso y costos" as BUC4
+usecase/ "Evaluar continuidad\ndel alquiler y optimizar costos" as BUC5
+
+Supervisor --> BUC1
+Supervisor --> BUC2
+Supervisor --> BUC3
+Admin --> BUC1
+Admin --> BUC4
+Admin --> BUC5
+Direccion --> BUC4
+Direccion --> BUC5
+Sensor --> BUC2
+BUC3 --> Notificaciones : <<notify>>
+
+BUC1 --> BUC2
+BUC2 --> BUC3
+BUC2 --> BUC4
+BUC4 --> BUC5
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

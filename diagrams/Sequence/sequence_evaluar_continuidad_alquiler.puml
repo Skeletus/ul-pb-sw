@@ -1,0 +1,35 @@
+@startuml "Sequence: Evaluate rental continuity"
+autonumber
+
+actor "Project Administrator" as Admin
+boundary "Frontend Web" as Frontend
+control "Backend API" as API
+control "Optimization Engine" as Optimization
+database "Database" as DB
+control "CostsAPI" as CostsAPI
+
+Admin -> Frontend : evaluateContinuity(machine)
+Frontend -> API : POST /optimization/evaluations
+activate API
+API -> API : validatePermissions(role)
+API -> Optimization : evaluate(machineId)
+activate Optimization
+Optimization -> DB : get rentalContract, readings and incidents
+DB --> Optimization : historical data
+Optimization -> CostsAPI : calculateInactivityCost(hours, rate)
+CostsAPI --> Optimization : inactivityCost
+Optimization -> Optimization : analyze usage trend
+alt effective usage below threshold
+  Optimization -> DB : save retirement or replacement recommendation
+else contract nearing expiration
+  Optimization -> DB : save renewal recommendation
+else acceptable usage
+  Optimization -> DB : save continuity recommendation
+end
+Optimization --> API : recommendation and potential savings
+deactivate Optimization
+API -> DB : insert audit_logs
+API --> Frontend : generated evaluation
+deactivate API
+Frontend --> Admin : shows recommendation
+@enduml

@@ -1,0 +1,4 @@
+@startuml "Class: Bidirectional Direction"
+Maquinaria "1" -- "1" ContratoAlquiler : mantiene
+Supervisor "1" -- "0..*" Incidencia : atiende
+@enduml

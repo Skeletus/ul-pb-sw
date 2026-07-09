@@ -1,0 +1,4 @@
+@startuml "Class: Composition Two"
+ContratoAlquiler "1" *-- "0..*" CostoInactividad
+Alerta "1" *-- "0..*" Notificacion
+@enduml

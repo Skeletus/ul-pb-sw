@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer components {
+  .section-kicker {
+    @apply text-sm font-black uppercase tracking-[0.16em] text-workmeter-orange;
+  }
+
+  .section-title {
+    @apply mt-4 text-3xl font-black leading-tight tracking-normal text-workmeter-ink sm:text-4xl lg:text-5xl;
+  }
+
+  .section-copy {
+    @apply mt-5 text-base leading-7 text-workmeter-steel sm:text-lg;
+  }
+
+  .form-label {
+    @apply text-sm font-bold text-slate-100;
+  }
+
+  .form-input {
+    @apply mt-2 w-full rounded border border-white/15 bg-white px-4 py-3 text-base text-workmeter-ink outline-none transition placeholder:text-slate-400 focus:border-workmeter-orange focus:ring-4 focus:ring-workmeter-orange/25;
+  }
+}

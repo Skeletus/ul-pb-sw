@@ -1,0 +1,46 @@
+@startuml "Sequence: Register machine, contract and sensor"
+autonumber
+
+actor User
+boundary "Frontend Web" as Frontend
+control "Backend API" as API
+control "Machine Service" as MachineService
+control "Contract Service" as ContractService
+control "Sensor Service" as SensorService
+database "Database" as DB
+entity "Sensor IoT" as Sensor
+
+User -> Frontend : register(machineData, rentalContract, sensor)
+activate Frontend
+Frontend -> API : POST /machines
+activate API
+API -> API : validatePermissions(role)
+API -> MachineService : registerMachine(machineData)
+activate MachineService
+MachineService -> DB : insert machines
+DB --> MachineService : machineId
+MachineService --> API : machine
+deactivate MachineService
+
+API -> ContractService : registerContract(machineId, rentalContract)
+activate ContractService
+ContractService -> ContractService : validateTermAndRate()
+ContractService -> DB : insert rental_contracts
+DB --> ContractService : contractId
+ContractService --> API : rentalContract
+deactivate ContractService
+
+API -> SensorService : associateSensor(machineId, sensorId)
+activate SensorService
+SensorService -> Sensor : checkAvailability()
+Sensor --> SensorService : available
+SensorService -> DB : update associated sensor
+SensorService --> API : association confirmed
+deactivate SensorService
+
+API -> DB : insert audit_logs
+API --> Frontend : successful registration
+deactivate API
+Frontend --> User : shows machine ready for monitoring
+deactivate Frontend
+@enduml

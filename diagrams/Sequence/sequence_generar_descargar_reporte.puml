@@ -1,0 +1,33 @@
+@startuml "Sequence: Generate and download report"
+autonumber
+
+actor "Project Administrator" as Admin
+boundary "Frontend Web" as Frontend
+control "Backend API" as API
+control "Report Engine" as ReportEngine
+database "Database" as DB
+control "PDF Generator" as PDF
+collections "File Storage" as Storage
+
+Admin -> Frontend : requestReport(filters)
+Frontend -> API : POST /reports
+activate API
+API -> API : validatePermissions(role)
+API -> ReportEngine : generate(filters)
+activate ReportEngine
+ReportEngine -> ReportEngine : validate site, machine and dates
+ReportEngine -> DB : query readings, costs, incidents
+DB --> ReportEngine : consolidated data
+ReportEngine -> ReportEngine : calculate indicators and savings
+ReportEngine -> PDF : buildDocument()
+PDF --> ReportEngine : PDF file
+ReportEngine -> Storage : save file
+Storage --> ReportEngine : download url
+ReportEngine -> DB : insert reports
+ReportEngine --> API : generated report
+deactivate ReportEngine
+API -> DB : insert audit_logs
+API --> Frontend : download url
+deactivate API
+Frontend --> Admin : download report
+@enduml

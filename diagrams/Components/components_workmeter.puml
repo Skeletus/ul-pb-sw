@@ -1,0 +1,55 @@
+@startuml "Components: WorkMeter"
+skinparam componentStyle uml2
+skinparam linetype ortho
+left to right direction
+
+component "Frontend Web WorkMeter" as Frontend
+
+component "Backend API" as Backend {
+  component "API de Autenticacion" as AuthAPI
+  component "API de Usuarios y Roles" as UsersAPI
+  component "API de Maquinaria" as MachineryAPI
+  component "API de Contratos" as ContractsAPI
+  component "API de Sensores" as SensorsAPI
+  component "API de Telemetria" as TelemetryAPI
+  component "API de Alertas" as AlertsAPI
+  component "API de Incidencias" as IncidentsAPI
+  component "API de Reportes" as ReportsAPI
+  component "API de Costos y Optimizacion" as CostsAPI
+}
+
+component "Motor de Monitoreo" as MonitoringEngine
+component "Motor de Alertas" as AlertEngine
+component "Motor de Reportes" as ReportsEngine
+component "Motor de Optimizacion" as OptimizationEngine
+database "Base de Datos" as Database
+component "Dispositivos IoT" as IoT <<external>>
+component "Servicio de Notificaciones" as Notifications <<external>>
+component "Servicio de Almacenamiento de Archivos" as Storage <<external>>
+component "Herramientas BI externas" as BI <<external>>
+
+Frontend --> Backend : HTTPS
+IoT --> TelemetryAPI : telemetry
+
+TelemetryAPI ..> MonitoringEngine
+MonitoringEngine ..> AlertEngine
+AlertsAPI ..> AlertEngine
+ReportsAPI ..> ReportsEngine
+CostsAPI ..> OptimizationEngine
+
+AuthAPI ..> Database
+UsersAPI ..> Database
+MachineryAPI ..> Database
+ContractsAPI ..> Database
+SensorsAPI ..> Database
+TelemetryAPI ..> Database
+AlertsAPI ..> Database
+IncidentsAPI ..> Database
+ReportsAPI ..> Database
+CostsAPI ..> Database
+
+AlertEngine ..> Notifications
+ReportsEngine ..> Storage
+ReportsEngine ..> BI
+OptimizationEngine ..> ReportsEngine
+@enduml

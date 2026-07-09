@@ -1,0 +1,36 @@
+@startuml "Sequence: Real-time machine monitoring"
+autonumber
+
+actor "Site Supervisor" as Supervisor
+boundary "Frontend Web" as Frontend
+control "Backend API" as API
+control "Monitoring Service" as MonitoringService
+entity "Sensor IoT" as Sensor
+database "Database" as DB
+control "Dashboard" as Dashboard
+
+Supervisor -> Frontend : open dashboard
+Frontend -> API : GET /dashboard
+API -> DB : query machines and indicators
+DB --> API : current data
+API --> Frontend : initial dashboard
+
+Sensor -> API : sendReading(vibration, consumption)
+activate API
+API -> MonitoringService : processReading()
+activate MonitoringService
+MonitoringService -> DB : save sensor_readings
+MonitoringService -> MonitoringService : compareThresholds()
+alt below threshold for more than 5 minutes
+  MonitoringService -> DB : register inactive machine_state_records
+else operational reading
+  MonitoringService -> DB : register active machine_state_records
+end
+MonitoringService -> Dashboard : updateIndicators()
+Dashboard --> Frontend : real-time event
+Frontend --> Supervisor : shows updated status
+MonitoringService --> API : processed reading
+deactivate MonitoringService
+API --> Sensor : ack
+deactivate API
+@enduml

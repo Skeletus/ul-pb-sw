@@ -1,0 +1,48 @@
+@startuml "Deployment: WorkMeter"
+skinparam linetype ortho
+
+node "Obra de construccion" as Site {
+  node "Maquinaria alquilada" as Machine {
+    artifact "Sensor de vibracion" as VibrationSensor
+    artifact "Sensor de consumo energetico" as EnergySensor
+  }
+  node "Gateway IoT" as Gateway
+  cloud "Conectividad celular o Wi-Fi" as Connectivity
+}
+
+node "Navegador del Supervisor" as SupervisorBrowser
+node "Navegador del Administrador" as AdminBrowser
+
+node "Servidor Frontend" as FrontendServer {
+  artifact "Frontend Web WorkMeter" as Frontend
+}
+
+node "Servidor Backend API" as BackendServer {
+  artifact "Backend API" as API
+  artifact "Servicio de telemetria" as TelemetryService
+  artifact "Servicio WebSocket o polling" as RealtimeService
+  artifact "Servicio de reportes" as ReportsService
+  artifact "Servicio de notificaciones" as NotificationService
+}
+
+database "Base de datos relacional" as RelationalDB
+collections "Almacenamiento de archivos" as FileStorage
+cloud "Servicios externos" as ExternalServices
+
+VibrationSensor --> Gateway : MQTT/HTTP
+EnergySensor --> Gateway : MQTT/HTTP
+Gateway --> Connectivity : TCP/IP
+Connectivity --> TelemetryService : HTTPS
+
+SupervisorBrowser --> FrontendServer : HTTPS
+AdminBrowser --> FrontendServer : HTTPS
+FrontendServer --> API : HTTPS
+API --> RealtimeService : WebSocket/polling
+API --> TelemetryService : internal
+API --> ReportsService : internal
+API --> NotificationService : internal
+TelemetryService --> RelationalDB : TCP/IP
+API --> RelationalDB : TCP/IP
+ReportsService --> FileStorage : HTTPS
+NotificationService --> ExternalServices : HTTPS
+@enduml

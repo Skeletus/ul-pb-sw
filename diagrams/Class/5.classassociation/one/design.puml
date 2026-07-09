@@ -1,0 +1,12 @@
+@startuml "Class Association: One"
+class Maquinaria
+class Sensor
+
+class AsociacionSensor {
+  fechaAsociacion : DateTime
+  activa : Boolean
+}
+
+Maquinaria "1" -- "0..1" Sensor : monitoreada por
+(Maquinaria, Sensor) .. AsociacionSensor
+@enduml

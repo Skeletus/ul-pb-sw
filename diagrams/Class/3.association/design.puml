@@ -1,0 +1,5 @@
+@startuml "Class: Association"
+Usuario "1" --> "0..*" LogAuditoria : registra
+Maquinaria "1" --> "0..*" LecturaSensor : recibe
+Alerta "1" --> "0..1" Incidencia : genera
+@enduml

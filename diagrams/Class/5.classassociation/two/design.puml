@@ -1,0 +1,12 @@
+@startuml "Class Association: Two"
+class Usuario
+class Rol
+
+class AsignacionRol {
+  fechaAsignacion : DateTime
+  asignadoPor : String
+}
+
+Usuario "1" -- "1..*" Rol : tiene
+(Usuario, Rol) .. AsignacionRol
+@enduml

@@ -1,0 +1,11 @@
+@startuml "State: Sensor"
+[*] --> Available
+Available --> Associated : assign to machine
+Associated --> Active : receives valid readings
+Active --> Disconnected : communication loss
+Disconnected --> Active : reconnection
+Active --> Error : persistent invalid reading
+Error --> Active : correct failure
+Associated --> Available : disassociate
+Available --> [*]
+@enduml

@@ -1,0 +1,40 @@
+@startuml "DDD: Bounded Contexts WorkMeter"
+left to right direction
+
+package "Identity and Access" as IAM {
+  class User <<AggregateRoot>>
+  class Role <<Entity>>
+  class Permission <<Entity>>
+}
+
+package "Machinery and Contracts Management" as Machinery {
+  class Machine <<AggregateRoot>>
+  class RentalContract <<AggregateRoot>>
+  class Sensor <<Entity>>
+}
+
+package "Telemetry and Monitoring" as Telemetry {
+  class SensorReading <<Entity>>
+  class MachineStateRecord <<ValueObject>>
+  class UsageClassifier <<DomainService>>
+}
+
+package "Alerts and Incidents" as Alerts {
+  class Alert <<AggregateRoot>>
+  class Incident <<Entity>>
+  class Notification <<Entity>>
+}
+
+package "Reports, Costs and Optimization" as Reports {
+  class Report <<AggregateRoot>>
+  class Recommendation <<AggregateRoot>>
+  class InactivityCost <<ValueObject>>
+}
+
+IAM ..> Machinery : authorizes
+Machinery ..> Telemetry : publishes machines
+Telemetry ..> Alerts : triggers
+Alerts ..> Reports : provides incidences
+Telemetry ..> Reports : provides usage
+Reports ..> Machinery : recommends continuity
+@enduml

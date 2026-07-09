@@ -1,0 +1,50 @@
+@startuml "Packages: WorkMeter Architecture"
+left to right direction
+title WorkMeter Package Diagram
+
+package "auth" as auth
+package "users" as users
+package "machinery" as machinery
+package "contracts" as contracts
+package "sensors" as sensors
+package "telemetry" as telemetry
+package "monitoring" as monitoring
+package "alerts" as alerts
+package "incidents" as incidents
+package "reports" as reports
+package "costs" as costs
+package "optimization" as optimization
+package "audit" as audit
+package "shared" as shared
+package "infrastructure" as infrastructure
+
+auth ..> users : loads roles
+users ..> audit : logs actions
+machinery ..> contracts : validates rental
+machinery ..> sensors : associates
+sensors ..> telemetry : receives readings
+telemetry ..> monitoring : processes
+monitoring ..> alerts : triggers
+alerts ..> incidents : opens
+alerts ..> audit : logs critical events
+reports ..> telemetry : queries usage
+reports ..> incidents : consolidates
+reports ..> costs : includes
+optimization ..> reports : analyzes
+optimization ..> costs : evaluates
+optimization ..> machinery : recommends
+auth ..> shared
+users ..> shared
+machinery ..> shared
+contracts ..> shared
+sensors ..> shared
+telemetry ..> shared
+monitoring ..> shared
+alerts ..> shared
+incidents ..> shared
+reports ..> shared
+costs ..> shared
+optimization ..> shared
+audit ..> infrastructure
+shared ..> infrastructure
+@enduml

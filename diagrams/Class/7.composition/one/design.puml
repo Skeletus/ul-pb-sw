@@ -1,0 +1,4 @@
+@startuml "Class: Composition One"
+Maquinaria "1" *-- "0..*" HistorialMantenimiento
+ReporteFinalOptimizacion "1" *-- "1..*" Recomendacion
+@enduml

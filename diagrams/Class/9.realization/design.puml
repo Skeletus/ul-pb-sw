@@ -1,0 +1,13 @@
+@startuml "Class: Realization"
+interface PriorizadorIncidencias {
+  + priorizar()
+}
+
+class PriorizadorPorInactividad implements PriorizadorIncidencias {
+  + priorizar()
+}
+
+class PriorizadorPorCosto implements PriorizadorIncidencias {
+  + priorizar()
+}
+@enduml

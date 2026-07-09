@@ -1,0 +1,9 @@
+@startuml "State: Incident"
+[*] --> Registered
+Registered --> Prioritized : prioritize incident
+Prioritized --> InProgress : assign owner
+InProgress --> Resolved : applied solution
+Resolved --> Closed : validate closure
+InProgress --> Prioritized : requires reprioritization
+Closed --> [*]
+@enduml

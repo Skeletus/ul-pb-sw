@@ -1,0 +1,200 @@
+@startuml "ERD: WorkMeter"
+skinparam linetype ortho
+
+entity users {
+    *id: INT <<PK>>
+    --
+    *name: VARCHAR(100)
+    *email: VARCHAR(120)
+    *password_hash: VARCHAR(255)
+    *status: VARCHAR(30)
+    *created_at: DATETIME
+}
+entity roles {
+    *id: INT <<PK>>
+    --
+    *name: VARCHAR(75)
+    description: VARCHAR(200)
+}
+entity permissions {
+    *id: INT <<PK>>
+    --
+    *code: VARCHAR(75)
+    description: VARCHAR(200)
+}
+entity role_permission {
+    *role_id: INT <<PK, FK>>
+    *permission_id: INT <<PK, FK>>
+}
+entity sessions {
+    *id: INT <<PK>>
+    --
+    *user_id: INT <<FK>>
+    *token: VARCHAR(255)
+    *start_date: DATETIME
+    expiration_date: DATETIME
+}
+entity audit_logs {
+    *id: INT <<PK>>
+    --
+    *user_id: INT <<FK>>
+    *action: VARCHAR(120)
+    *entity: VARCHAR(80)
+    *date: DATETIME
+}
+entity sites {
+    *id: INT <<PK>>
+    --
+    *name: VARCHAR(120)
+    location: VARCHAR(180)
+}
+entity machines {
+    *id: INT <<PK>>
+    --
+    *site_id: INT <<FK>>
+    *code: VARCHAR(60)
+    *type: VARCHAR(80)
+    *current_status: VARCHAR(50)
+}
+entity rental_contracts {
+    *id: INT <<PK>>
+    --
+    *machine_id: INT <<FK>>
+    *start_date: DATE
+    *end_date: DATE
+    *hourly_rate: DECIMAL(10,2)
+    *status: VARCHAR(30)
+}
+entity sensors {
+    *id: INT <<PK>>
+    --
+    machine_id: INT <<FK>>
+    *identifier: VARCHAR(80)
+    *type: VARCHAR(60)
+    *status: VARCHAR(30)
+}
+entity sensor_readings {
+    *id: INT <<PK>>
+    --
+    *sensor_id: INT <<FK>>
+    *timestamp: DATETIME
+    *vibration: DECIMAL(10,4)
+    *energy_consumption: DECIMAL(10,4)
+}
+entity machine_state_records {
+    *id: INT <<PK>>
+    --
+    *machine_id: INT <<FK>>
+    *status: VARCHAR(60)
+    *start_date: DATETIME
+    end_date: DATETIME
+}
+entity alert_configurations {
+    *id: INT <<PK>>
+    --
+    *site_id: INT <<FK>>
+    *inactivity_threshold_minutes: INT
+    *effective_usage_threshold: DECIMAL(5,2)
+    *active: BIT
+}
+entity alerts {
+    *id: INT <<PK>>
+    --
+    *machine_id: INT <<FK>>
+    *alert_configuration_id: INT <<FK>>
+    *priority: VARCHAR(30)
+    *status: VARCHAR(30)
+    *generation_date: DATETIME
+}
+entity incidents {
+    *id: INT <<PK>>
+    --
+    *alert_id: INT <<FK>>
+    *description: VARCHAR(255)
+    *priority: VARCHAR(30)
+    *status: VARCHAR(30)
+}
+entity notifications {
+    *id: INT <<PK>>
+    --
+    *alert_id: INT <<FK>>
+    *channel: VARCHAR(40)
+    *recipient: VARCHAR(120)
+    *status: VARCHAR(30)
+}
+entity reports {
+    *id: INT <<PK>>
+    --
+    *site_id: INT <<FK>>
+    machine_id: INT <<FK>>
+    *type: VARCHAR(60)
+    *start_date: DATE
+    *end_date: DATE
+    file_url: VARCHAR(255)
+}
+entity inactivity_costs {
+    *id: INT <<PK>>
+    --
+    *report_id: INT <<FK>>
+    *machine_id: INT <<FK>>
+    *inactive_hours: DECIMAL(10,2)
+    *contract_rate: DECIMAL(10,2)
+    *amount: DECIMAL(10,2)
+}
+entity savings_indicators {
+    *id: INT <<PK>>
+    --
+    *report_id: INT <<FK>>
+    *estimated_savings: DECIMAL(10,2)
+    improvement_percentage: DECIMAL(5,2)
+}
+entity usage_trends {
+    *id: INT <<PK>>
+    --
+    *report_id: INT <<FK>>
+    *machine_id: INT <<FK>>
+    *period: VARCHAR(40)
+    *usage_percentage: DECIMAL(5,2)
+}
+entity recommendations {
+    *id: INT <<PK>>
+    --
+    *report_id: INT <<FK>>
+    *machine_id: INT <<FK>>
+    *type: VARCHAR(40)
+    *description: VARCHAR(255)
+}
+entity maintenance_history {
+    *id: INT <<PK>>
+    --
+    *machine_id: INT <<FK>>
+    *date: DATE
+    *description: VARCHAR(255)
+    owner: VARCHAR(120)
+}
+
+roles ||--o{ role_permission
+permissions ||--o{ role_permission
+users ||--o{ sessions
+users ||--o{ audit_logs
+sites ||--o{ machines
+sites ||--o{ alert_configurations
+machines ||--o{ rental_contracts
+machines ||--o{ sensors
+sensors ||--o{ sensor_readings
+machines ||--o{ machine_state_records
+alert_configurations ||--o{ alerts
+machines ||--o{ alerts
+alerts ||--o| incidents
+alerts ||--o{ notifications
+sites ||--o{ reports
+machines ||--o{ reports
+reports ||--o{ inactivity_costs
+reports ||--o{ savings_indicators
+reports ||--o{ usage_trends
+reports ||--o{ recommendations
+machines ||--o{ inactivity_costs
+machines ||--o{ usage_trends
+machines ||--o{ recommendations
+machines ||--o{ maintenance_history
+@enduml

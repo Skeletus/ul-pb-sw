@@ -1,0 +1,58 @@
+@startuml "Class: Machinery and Contracts Management"
+
+class Site {
+  - id : Long
+  - name : String
+  - location : String
+  + addMachine(machine : Machine) : void
+}
+
+class Machine {
+  - id : Long
+  - code : String
+  - type : String
+  - currentStatus : MachineStatus
+  + activate() : void
+  + decommission() : void
+}
+
+class RentalContract {
+  - id : Long
+  - startDate : Date
+  - endDate : Date
+  - hourlyRate : Decimal
+  - status : String
+  + isValid() : Boolean
+  + calculateInactivityCost(hours : Decimal) : Decimal
+}
+
+class Sensor {
+  - id : Long
+  - identifier : String
+  - type : String
+  - status : String
+  + associate(machine : Machine) : void
+}
+
+class MaintenanceHistory {
+  - id : Long
+  - date : Date
+  - description : String
+  - owner : String
+}
+
+enum MachineStatus {
+  REGISTERED
+  ACTIVE
+  INACTIVE
+  POWERED_ON_NO_PRODUCTIVE_USE
+  UNDER_DOCUMENTED_MAINTENANCE
+  DECOMMISSIONED
+}
+
+Site "1" o-- "0..*" Machine : contains
+Machine "1" --> "1" RentalContract : rentedBy
+Machine "1" --> "0..1" Sensor : monitoredBy
+Machine "1" *-- "0..*" MaintenanceHistory : records
+Machine --> MachineStatus : uses
+@enduml

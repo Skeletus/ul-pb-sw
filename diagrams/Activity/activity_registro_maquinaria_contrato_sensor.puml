@@ -1,0 +1,45 @@
+@startuml "Activity: Registro de maquinaria, contrato y sensor"
+skinparam SwimlaneTitleBackgroundColor #EEE
+skinparam ActivityBackgroundColor #FFF9C4
+skinparam ActivityBorderColor #7A1631
+skinparam Arrow {
+  Color #7A1631
+}
+
+|Administrador de Proyectos|
+start
+:Solicita registrar maquinaria;
+
+|WorkMeter|
+:Valida permisos por rol;
+if (Usuario autorizado?) then (Si)
+  :Captura datos de obra y maquinaria;
+  :Captura contrato de alquiler;
+  if (Contrato vigente y tarifa configurada?) then (Si)
+    :Registra maquinaria;
+    :Registra contrato;
+    |Sensor IoT|
+    :Entrega identificador del sensor;
+    |WorkMeter|
+    :Valida sensor disponible;
+    if (Sensor disponible?) then (Si)
+      :Asocia sensor a maquinaria;
+      :Registra accion critica en log de auditoria;
+      :Maquinaria queda lista para monitoreo;
+      stop
+    else (No)
+      :Registra maquinaria sin sensor activo;
+      :Notifica asociacion pendiente;
+      stop
+    endif
+  else (No)
+    :Rechaza registro del contrato;
+    :Solicita corregir vigencia o tarifa;
+    stop
+  endif
+else (No)
+  :Deniega acceso;
+  :Registra intento en auditoria;
+  stop
+endif
+@enduml

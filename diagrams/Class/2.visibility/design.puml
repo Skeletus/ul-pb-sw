@@ -1,0 +1,9 @@
+@startuml "Class: Visibility"
+class Usuario {
+  - id : Long
+  - passwordHash : String
+  # estado : String
+  + email : String
+  + tienePermiso(codigo : String) : Boolean
+}
+@enduml

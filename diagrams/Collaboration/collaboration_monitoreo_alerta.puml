@@ -1,0 +1,23 @@
+@startuml "Collaboration: Monitoring and alert"
+actor    Supervisor          as "supervisor : Supervisor"
+boundary Dashboard           as "dashboard : Dashboard"
+entity   Machine             as "machine : Machine"
+entity   Sensor              as "sensor : Sensor"
+control  MonitoringService   as "monitoringService : MonitoringService"
+control  AlertEngine         as "alertEngine : AlertEngine"
+entity   Alert               as "alert : Alert"
+control  Notification        as "notification : Notification"
+entity   Incident            as "incident : Incident"
+
+(Sensor) -- (MonitoringService) : "1: sendReading(vibration, consumption)\n<&arrow-right>"
+(MonitoringService) -- (Machine) : "2: updateStatus()\n<&arrow-right>"
+(MonitoringService) -- (Dashboard) : "3: updateIndicators()\n<&arrow-right>"
+(Dashboard) ..> Supervisor : "4: show low utilization\n<&arrow-left>"
+(MonitoringService) -- (AlertEngine) : "5: evaluateInactivity()\n<&arrow-right>"
+(AlertEngine) -- (Alert) : "6: create high priority\n<&arrow-right>"
+(Alert) -- (Notification) : "7: request send\n<&arrow-right>"
+(Notification) ..> Supervisor : "8: notify alert\n<&arrow-left>"
+Supervisor -- (Incident) : "9: register incident\n<&arrow-right>"
+(Incident) ..> (Alert) : "10: link follow-up\n<&arrow-left>"
+
+@enduml

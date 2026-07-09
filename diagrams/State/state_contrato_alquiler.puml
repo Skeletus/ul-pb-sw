@@ -1,0 +1,10 @@
+@startuml "State: RentalContract"
+[*] --> Valid
+Valid --> Expired : end date reached
+Valid --> Cancelled : early cancellation
+Valid --> Renewed : continuity decision
+Renewed --> Valid : new period
+Expired --> Renewed : approve renewal
+Expired --> [*]
+Cancelled --> [*]
+@enduml

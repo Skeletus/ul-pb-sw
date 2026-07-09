@@ -1,0 +1,64 @@
+@startuml "Class: Reports, Costs and Optimization"
+
+abstract class Report {
+  - id : Long
+  - generationDate : DateTime
+  - siteId : Long
+  - machineId : Long
+  - startDate : Date
+  - endDate : Date
+  + generate() : void
+  + export() : String
+}
+
+class DailyReport
+class FinalOptimizationReport {
+  + consolidateSavings() : Decimal
+  + consolidateRecommendations() : List<Recommendation>
+}
+
+class InactivityCost {
+  - id : Long
+  - inactiveHours : Decimal
+  - contractRate : Decimal
+  - amount : Decimal
+  + calculate() : Decimal
+}
+
+class SavingsIndicator {
+  - id : Long
+  - estimatedSavings : Decimal
+  - improvementPercentage : Decimal
+}
+
+class UsageTrend {
+  - id : Long
+  - period : String
+  - usagePercentage : Decimal
+  + isLowUtilization(threshold : Decimal) : Boolean
+}
+
+class Recommendation {
+  - id : Long
+  - type : String
+  - description : String
+  + approve() : void
+}
+
+Report <|-- DailyReport
+Report <|-- FinalOptimizationReport
+Report "1" --> "0..*" InactivityCost : includes
+Report "1" --> "0..*" SavingsIndicator : includes
+Report "1" --> "0..*" UsageTrend : analyzes
+FinalOptimizationReport "1" *-- "1..*" Recommendation : consolidates
+
+note right of Report
+  Reports are filtered by site,
+  machine and date range.
+end note
+
+note bottom of InactivityCost
+  amount = accumulated inactive hours
+  * configured contract rate.
+end note
+@enduml

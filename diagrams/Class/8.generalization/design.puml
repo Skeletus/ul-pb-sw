@@ -1,0 +1,8 @@
+@startuml "Class: Generalization"
+abstract class Reporte
+class ReporteDiario
+class ReporteFinalOptimizacion
+
+Reporte <|-- ReporteDiario
+Reporte <|-- ReporteFinalOptimizacion
+@enduml

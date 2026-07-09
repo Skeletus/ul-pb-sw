@@ -1,0 +1,5 @@
+@startuml "Class: Unidirectional Direction"
+Reporte --> CostoInactividad : calcula
+Dashboard --> IndicadorUso : muestra
+Sensor --> LecturaSensor : envia
+@enduml

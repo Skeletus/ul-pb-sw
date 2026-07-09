@@ -1,0 +1,46 @@
+@startuml "Activity: Gestion de alertas e incidencias"
+skinparam SwimlaneTitleBackgroundColor #EEE
+skinparam ActivityBackgroundColor #FFF9C4
+skinparam ActivityBorderColor #7A1631
+skinparam Arrow {
+  Color #7A1631
+}
+
+|Motor de Alertas|
+start
+:Evalua estado e indicadores de maquinaria;
+if (Inactiva > 30 minutos o supera umbral configurado?) then (Si)
+  :Genera alerta de alta prioridad;
+  |Servicio de Notificaciones|
+  :Notifica a responsables;
+  |Supervisor de Obra|
+  :Revisa alerta;
+  if (Requiere incidencia?) then (Si)
+    :Registra incidencia;
+    |WorkMeter|
+    :Prioriza incidencia;
+    :Asocia evidencia y lecturas;
+    :Registra accion critica en auditoria;
+    |Supervisor de Obra|
+    :Atiende incidencia;
+    if (Problema resuelto?) then (Si)
+      |WorkMeter|
+      :Marca incidencia como resuelta;
+      :Cierra alerta;
+      stop
+    else (No)
+      :Mantiene incidencia en atencion;
+      :Reprograma seguimiento;
+      stop
+    endif
+  else (No)
+    |WorkMeter|
+    :Marca alerta como atendida;
+    :Cierra alerta sin incidencia;
+    stop
+  endif
+else (No)
+  :No genera alerta;
+  stop
+endif
+@enduml

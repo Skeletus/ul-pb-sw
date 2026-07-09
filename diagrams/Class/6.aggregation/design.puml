@@ -1,0 +1,5 @@
+@startuml "Class: Aggregation"
+Obra "1" o-- "0..*" Maquinaria
+Dashboard "1" o-- "0..*" IndicadorUso
+Reporte "1" o-- "0..*" IndicadorAhorro
+@enduml

@@ -1,0 +1,55 @@
+@startuml "Class: Identity and Access"
+
+class User {
+  - id : Long
+  - name : String
+  - email : String
+  - status : String
+  + authenticate(password : String) : Session
+  + hasPermission(code : String) : Boolean
+}
+
+class Role {
+  - id : Long
+  - name : String
+  + assignPermission(permission : Permission) : void
+}
+
+class Permission {
+  - id : Long
+  - code : String
+  - description : String
+}
+
+class Session {
+  - id : Long
+  - token : String
+  - startDate : DateTime
+  - expirationDate : DateTime
+  + expire() : void
+}
+
+class AuditLog {
+  - id : Long
+  - action : String
+  - entity : String
+  - date : DateTime
+  - severity : String
+  + log() : void
+}
+
+User "1" --> "1..*" Role : has
+Role "1" --> "0..*" Permission : grants
+User "1" --> "0..*" Session : opens
+User "1" --> "0..*" AuditLog : creates
+
+note right of User
+  Users can only access
+  features allowed by their role.
+end note
+
+note bottom of AuditLog
+  Critical actions are recorded
+  in audit logs.
+end note
+@enduml

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: workmeter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: workmeter
+      POSTGRES_USER: workmeter
+      POSTGRES_PASSWORD: workmeter
+    ports:
+      - "5432:5432"
+    volumes:
+      - workmeter_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  workmeter_postgres_data:

@@ -1,0 +1,23 @@
+@startuml "Business Use Case: Monitorear uso efectivo"
+left to right direction
+
+actor/ "Supervisor de\nObra" <<Business Worker>> as Supervisor
+actor/ "Sensor IoT" <<Business Actor>> as Sensor
+
+usecase/ "Monitorear uso efectivo\nde maquinaria" as BUC2
+
+Supervisor --> BUC2
+Sensor --> BUC2
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

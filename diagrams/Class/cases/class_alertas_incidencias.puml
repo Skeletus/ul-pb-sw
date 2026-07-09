@@ -1,0 +1,53 @@
+@startuml "Class: Alerts and Incidents"
+
+class AlertConfiguration {
+  - id : Long
+  - inactivityThresholdMinutes : Integer
+  - effectiveUsageThreshold : Decimal
+  - active : Boolean
+}
+
+class Alert {
+  - id : Long
+  - priority : String
+  - status : String
+  - generationDate : DateTime
+  + markUnderReview() : void
+  + close() : void
+}
+
+class Incident {
+  - id : Long
+  - description : String
+  - priority : String
+  - status : String
+  + resolve() : void
+}
+
+class Notification {
+  - id : Long
+  - channel : String
+  - recipient : String
+  - message : String
+  + send() : void
+}
+
+interface IncidentPrioritizer {
+  + prioritize(incident : Incident) : String
+}
+
+class InactivityBasedPrioritizer implements IncidentPrioritizer {
+  + prioritize(incident : Incident) : String
+}
+
+AlertConfiguration "1" --> "0..*" Alert : defines
+Alert "1" --> "0..1" Incident : opens
+Alert "1" --> "0..*" Notification : sends
+Incident ..> IncidentPrioritizer : uses
+
+note right of Alert
+  High priority: inactive machine
+  for more than 30 minutes or above
+  the configured threshold.
+end note
+@enduml

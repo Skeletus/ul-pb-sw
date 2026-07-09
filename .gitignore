@@ -1,0 +1,67 @@
+# Dependencies
+/backend/node_modules/
+/frontend/node_modules/
+
+# Build outputs
+/backend/dist/
+/frontend/.next/
+/frontend/out/
+/frontend/dist/
+/frontend/build/
+
+# TypeScript incremental builds
+/backend/*.tsbuildinfo
+/backend/**/*.tsbuildinfo
+/frontend/*.tsbuildinfo
+/frontend/**/*.tsbuildinfo
+
+# Environment files
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+/frontend/.env
+/frontend/.env.*
+!/frontend/.env.example
+
+# Logs
+/backend/logs/
+/frontend/logs/
+/backend/*.log
+/frontend/*.log
+/backend/npm-debug.log*
+/backend/yarn-debug.log*
+/backend/yarn-error.log*
+/backend/pnpm-debug.log*
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/pnpm-debug.log*
+
+# Test and coverage output
+/backend/coverage/
+/frontend/coverage/
+/backend/.nyc_output/
+/frontend/.nyc_output/
+/backend/test-results/
+/frontend/test-results/
+/backend/playwright-report/
+/frontend/playwright-report/
+
+# Framework and tool caches
+/backend/.cache/
+/frontend/.cache/
+/frontend/.vercel/
+/frontend/.turbo/
+/backend/.turbo/
+
+# Local databases and uploads
+/backend/*.db
+/backend/*.sqlite
+/backend/*.sqlite3
+/backend/uploads/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

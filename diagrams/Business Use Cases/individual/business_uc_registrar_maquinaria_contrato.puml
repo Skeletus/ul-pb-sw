@@ -1,0 +1,21 @@
+@startuml "Business Use Case: Registrar maquinaria y contrato"
+left to right direction
+
+actor/ "Administrador de\nProyectos" <<Business Worker>> as Admin
+
+usecase/ "Registrar maquinaria\ny contrato de alquiler" as BUC1
+
+Admin --> BUC1
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

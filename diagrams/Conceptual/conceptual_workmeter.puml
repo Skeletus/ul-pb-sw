@@ -1,0 +1,28 @@
+@startuml "Conceptual Model: WorkMeter"
+
+class ConstructionCompany
+class Site
+class Machine
+class RentalContract
+class Sensor
+class SensorReading
+class MachineStateRecord
+class Alert
+class Incident
+class Report
+class InactivityCost
+class Recommendation
+
+ConstructionCompany "1" --> "1..*" Site : manages
+Site "1" --> "0..*" Machine : uses
+Machine "1" --> "1" RentalContract : rentedThrough
+Machine "1" --> "0..1" Sensor : monitoredBy
+Sensor "1" --> "0..*" SensorReading : generates
+SensorReading "0..*" --> "1" MachineStateRecord : determines
+MachineStateRecord "1" --> "0..*" Alert : canGenerate
+Alert "1" --> "0..1" Incident : derivesInto
+Report "1" --> "0..*" InactivityCost : consolidates
+Report "1" --> "0..*" Recommendation : proposes
+Machine "1" --> "0..*" InactivityCost : accumulates
+Machine "1" --> "0..*" Recommendation : receives
+@enduml

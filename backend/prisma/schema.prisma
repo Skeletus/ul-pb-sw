@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MachineStatus {
+  REGISTERED
+  ACTIVE
+  INACTIVE
+  POWERED_ON_NO_PRODUCTIVE_USE
+  UNDER_DOCUMENTED_MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(120)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  status       String    @db.VarChar(30)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
+  token          String    @db.Text
+  startDate      DateTime  @default(now()) @map("start_date")
+  expirationDate DateTime? @map("expiration_date")
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Site {
+  id       Int       @id @default(autoincrement())
+  name     String    @db.VarChar(120)
+  location String?   @db.VarChar(180)
+  machines Machine[]
+  reports  Report[]
+
+  @@map("sites")
+}
+
+model Machine {
+  id                  Int                  @id @default(autoincrement())
+  siteId              Int                  @map("site_id")
+  code                String               @unique @db.VarChar(60)
+  type                String               @db.VarChar(80)
+  currentStatus       MachineStatus        @default(REGISTERED) @map("current_status")
+  hourlyRate          Decimal              @default(0) @map("hourly_rate") @db.Decimal(10, 2)
+  site                Site                 @relation(fields: [siteId], references: [id])
+  sensorReadings      SensorReading[]
+  machineStateRecords MachineStateRecord[]
+  alerts              Alert[]
+  reports             Report[]
+  inactivityCosts     InactivityCost[]
+
+  @@index([siteId])
+  @@map("machines")
+}
+
+model SensorReading {
+  id                Int      @id @default(autoincrement())
+  machineId         Int      @map("machine_id")
+  timestamp         DateTime @default(now())
+  vibration         Decimal  @db.Decimal(10, 4)
+  energyConsumption Decimal  @map("energy_consumption") @db.Decimal(10, 4)
+  machine           Machine  @relation(fields: [machineId], references: [id])
+
+  @@index([machineId, timestamp])
+  @@map("sensor_readings")
+}
+
+model MachineStateRecord {
+  id        Int           @id @default(autoincrement())
+  machineId Int           @map("machine_id")
+  status    MachineStatus
+  startDate DateTime      @map("start_date")
+  endDate   DateTime?     @map("end_date")
+  machine   Machine       @relation(fields: [machineId], references: [id])
+
+  @@index([machineId, startDate])
+  @@map("machine_state_records")
+}
+
+model Alert {
+  id             Int         @id @default(autoincrement())
+  machineId      Int         @map("machine_id")
+  priority       String      @db.VarChar(30)
+  status         AlertStatus @default(ACTIVE)
+  generationDate DateTime    @default(now()) @map("generation_date")
+  resolvedDate   DateTime?   @map("resolved_date")
+  machine        Machine     @relation(fields: [machineId], references: [id])
+
+  @@index([machineId, status])
+  @@map("alerts")
+}
+
+model Report {
+  id              Int              @id @default(autoincrement())
+  siteId          Int              @map("site_id")
+  machineId       Int              @map("machine_id")
+  type            String           @db.VarChar(60)
+  startDate       DateTime         @map("start_date")
+  endDate         DateTime         @map("end_date")
+  fileUrl         String?          @map("file_url") @db.VarChar(255)
+  site            Site             @relation(fields: [siteId], references: [id])
+  machine         Machine          @relation(fields: [machineId], references: [id])
+  inactivityCosts InactivityCost[]
+
+  @@unique([machineId, type, startDate, endDate])
+  @@index([siteId])
+  @@map("reports")
+}
+
+model InactivityCost {
+  id            Int     @id @default(autoincrement())
+  reportId      Int     @map("report_id")
+  machineId     Int     @map("machine_id")
+  inactiveHours Decimal @map("inactive_hours") @db.Decimal(10, 2)
+  contractRate  Decimal @map("contract_rate") @db.Decimal(10, 2)
+  amount        Decimal @db.Decimal(10, 2)
+  report        Report  @relation(fields: [reportId], references: [id])
+  machine       Machine @relation(fields: [machineId], references: [id])
+
+  @@unique([reportId, machineId])
+  @@index([machineId])
+  @@map("inactivity_costs")
+}

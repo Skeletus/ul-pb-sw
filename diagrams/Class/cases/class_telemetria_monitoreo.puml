@@ -1,0 +1,58 @@
+@startuml "Class: Telemetry and Monitoring"
+
+class Sensor {
+  - id : Long
+  - identifier : String
+  - status : String
+  + sendReading() : SensorReading
+}
+
+class SensorReading {
+  - id : Long
+  - timestamp : DateTime
+  - vibration : Decimal
+  - energyConsumption : Decimal
+  + isOperational(vibrationThreshold : Decimal, consumptionThreshold : Decimal) : Boolean
+}
+
+class MachineStateRecord {
+  - id : Long
+  - status : String
+  - startDate : DateTime
+  - endDate : DateTime
+  + durationInMinutes() : Integer
+}
+
+class UsageClassifier {
+  - vibrationThreshold : Decimal
+  - consumptionThreshold : Decimal
+  - inactivityMinutes : Integer
+  + classify(readings : List<SensorReading>) : MachineStateRecord
+}
+
+class Dashboard {
+  - id : Long
+  - updateDate : DateTime
+  + update(indicator : UsageIndicator) : void
+}
+
+class UsageIndicator {
+  - id : Long
+  - effectiveUsagePercentage : Decimal
+  - inactiveHours : Decimal
+  - belowThreshold : Boolean
+  + flagIfLowUsage(threshold : Decimal) : Boolean
+}
+
+Sensor "1" --> "0..*" SensorReading : produces
+UsageClassifier ..> SensorReading : evaluates
+UsageClassifier ..> MachineStateRecord : creates
+Dashboard "1" o-- "0..*" UsageIndicator : displays
+UsageIndicator ..> MachineStateRecord : summarizes
+
+note right of UsageClassifier
+  A machine is considered inactive
+  if vibration or consumption is below
+  the operating threshold for more than 5 minutes.
+end note
+@enduml

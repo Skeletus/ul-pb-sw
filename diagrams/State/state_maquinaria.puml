@@ -1,0 +1,13 @@
+@startuml "State: Machine"
+[*] --> Registered
+Registered --> Active : valid contract and associated sensor
+Active --> Inactive : vibration or consumption below threshold > 5 min
+Inactive --> PoweredOnNoProductiveUse : remains powered on without use
+PoweredOnNoProductiveUse --> Active : operational values
+Active --> UnderDocumentedMaintenance : register maintenance
+Inactive --> UnderDocumentedMaintenance : review cause
+UnderDocumentedMaintenance --> Active : maintenance closed
+Active --> Decommissioned : withdrawal
+Inactive --> Decommissioned : withdrawal
+Decommissioned --> [*]
+@enduml

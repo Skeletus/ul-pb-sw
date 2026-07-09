@@ -1,0 +1,23 @@
+@startuml "Business Use Case: Gestionar alertas e incidencias"
+left to right direction
+
+actor/ "Supervisor de\nObra" <<Business Worker>> as Supervisor
+actor/ "Servicio de\nNotificaciones" <<Business Actor>> as Notificaciones
+
+usecase/ "Gestionar alertas\ne incidencias" as BUC3
+
+Supervisor --> BUC3
+BUC3 --> Notificaciones : <<notify>>
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

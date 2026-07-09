@@ -1,0 +1,6 @@
+@startuml "Class: Dependency"
+MotorAlertas ..> ConfiguracionAlerta : reads
+MotorAlertas ..> ServicioNotificaciones : sends
+MotorOptimizacion ..> ContratoAlquiler : uses
+MotorReportes ..> GeneradorPDF : exports
+@enduml
