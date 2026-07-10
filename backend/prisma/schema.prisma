@@ -59,8 +59,39 @@ model User {
   sessions     Session[]
   passwordResetTokens PasswordResetToken[]
   incidents    OperationalIncident[]
+  roleId       Int       @map("role_id")
+  role         Role      @relation(fields: [roleId], references: [id])
 
   @@map("users")
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique @db.VarChar(50)
+  description String?      @db.VarChar(200)
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique @db.VarChar(75)
+  description String?      @db.VarChar(200)
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+  role         Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 model PasswordResetToken {
@@ -115,9 +146,22 @@ model Machine {
   rentalContracts     RentalContract[]
   sensors             Sensor[]
   incidents           OperationalIncident[]
+  alertConfiguration  AlertConfiguration?
 
   @@index([siteId])
   @@map("machines")
+}
+
+model AlertConfiguration {
+  id                         Int      @id @default(autoincrement())
+  machineId                  Int      @unique @map("machine_id")
+  inactivityThresholdMinutes Int      @map("inactivity_threshold_minutes")
+  active                     Boolean  @default(true)
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  machine                    Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@map("alert_configurations")
 }
 
 model RentalContract {

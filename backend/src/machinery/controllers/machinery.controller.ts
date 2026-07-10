@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator'; import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -28,9 +29,12 @@ export class MachineryController {
 
   @Get()
   @ApiOkResponse({ type: [MachineResponseDto] })
-  findAll() {
-    return this.machineryService.findAll();
+  findAll(@Query('siteId') siteId?: string) {
+    return this.machineryService.findAll(siteId ? Number(siteId) : undefined);
   }
+
+  @Patch(':id') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') update(@Param('id',ParseIntPipe)id:number,@Body()dto:{code?:string;type?:string;siteId?:number}){return this.machineryService.update(id,dto)}
+  @Patch(':id/decommission') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') decommission(@Param('id',ParseIntPipe)id:number){return this.machineryService.decommission(id)}
 
   @Get(':id')
   @ApiOkResponse({ type: MachineResponseDto })

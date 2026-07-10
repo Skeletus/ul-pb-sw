@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -73,7 +73,7 @@ export class AuthService {
   async me(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, status: true, createdAt: true },
+      select: { id: true, name: true, email: true, status: true, createdAt: true, role: { select: { name: true } } },
     });
 
     if (!user) {
@@ -81,6 +81,19 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async updateProfile(userId: number, dto: { name?: string; email?: string }) {
+    if (dto.email) { const existing = await this.prisma.user.findUnique({ where: { email: dto.email } }); if (existing && existing.id !== userId) throw new ConflictException('Email already exists'); }
+    return this.prisma.user.update({ where: { id: userId }, data: dto, select: { id: true, name: true, email: true, status: true, createdAt: true, role: { select: { name: true } } } });
+  }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string, sessionId: number) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) throw new BadRequestException('Current password is incorrect');
+    const now = new Date(); const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.$transaction([this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }), this.prisma.session.updateMany({ where: { userId, id: { not: sessionId }, expirationDate: null }, data: { expirationDate: now } })]);
+    return { message: 'Password updated successfully' };
   }
 
   async requestPasswordReset(email: string) {

@@ -5,6 +5,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   const passwordHash = await bcrypt.hash('Demo123456', 10);
+  const supervisorRole = await prisma.role.upsert({
+    where: { name: 'SUPERVISOR' },
+    update: { description: 'Operational supervisor' },
+    create: { name: 'SUPERVISOR', description: 'Operational supervisor' },
+  });
+  await prisma.role.upsert({
+    where: { name: 'ADMINISTRATOR' },
+    update: { description: 'Project administrator' },
+    create: { name: 'ADMINISTRATOR', description: 'Project administrator' },
+  });
 
   await prisma.user.upsert({
     where: { email: 'demo@workmeter.com' },
@@ -12,12 +22,14 @@ async function main() {
       name: 'Demo Supervisor',
       passwordHash,
       status: 'ACTIVE',
+      roleId: supervisorRole.id,
     },
     create: {
       name: 'Demo Supervisor',
       email: 'demo@workmeter.com',
       passwordHash,
       status: 'ACTIVE',
+      roleId: supervisorRole.id,
     },
   });
 

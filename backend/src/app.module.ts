@@ -12,6 +12,7 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { SensorsModule } from './sensors/sensors.module';
 import { IncidentsModule } from './incidents/incidents.module';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { IncidentsModule } from './incidents/incidents.module';
     ContractsModule,
     SensorsModule,
     IncidentsModule,
+    RolesModule,
   ],
 })
 export class AppModule {}
