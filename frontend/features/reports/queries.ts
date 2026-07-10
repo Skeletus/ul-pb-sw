@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getDailyReport, getGeneratedDailyReports } from "@/lib/api/reports";
+import { getDailyReport, getGeneratedDailyReports, getSavingsProjection } from "@/lib/api/reports";
 import type { DailyReportQuery } from "@/types/api";
 
 export const reportKeys = {
@@ -7,11 +7,15 @@ export const reportKeys = {
   generatedDaily: () => [...reportKeys.all, "daily", "generated"] as const
 };
 
-export function useGeneratedDailyReports() {
+export function useGeneratedDailyReports(filters: { machineId?: number; from?: string; to?: string } = {}) {
   return useQuery({
-    queryKey: reportKeys.generatedDaily(),
-    queryFn: getGeneratedDailyReports
+    queryKey: [...reportKeys.generatedDaily(), filters],
+    queryFn: () => getGeneratedDailyReports(filters)
   });
+}
+
+export function useSavingsProjection(machineId: number, startDate: string, endDate: string) {
+  return useQuery({ queryKey: [...reportKeys.all, "savings", machineId, startDate, endDate], queryFn: () => getSavingsProjection(machineId, startDate, endDate), enabled: machineId > 0 && Boolean(startDate) && Boolean(endDate) });
 }
 
 export function useDailyReportMutation() {

@@ -140,12 +140,14 @@ export class ReportsService {
 
   async findGeneratedDailyReports(query: ListDailyReportsQueryDto) {
     const range = query.date ? this.getReportRange(query.date) : null;
+    const fromRange = query.from ? this.getReportRange(query.from) : null;
+    const toRange = query.to ? this.getReportRange(query.to) : null;
     const reports = await this.prisma.report.findMany({
       where: {
         type: 'DAILY',
         machineId: query.machineId,
-        startDate: range?.startDate,
-        endDate: range?.endDate,
+        startDate: range?.startDate ?? (fromRange ? { gte: fromRange.startDate } : undefined),
+        endDate: range?.endDate ?? (toRange ? { lte: toRange.endDate } : undefined),
       },
       include: {
         machine: { include: { site: true } },
@@ -154,6 +156,23 @@ export class ReportsService {
       orderBy: [{ startDate: 'desc' }, { machineId: 'asc' }],
     });
     return reports.map((item) => this.toDailyReportResponse(item));
+  }
+
+  async getSavingsProjection(machineId: number, startDate: string, endDate: string) {
+    const comparison = await this.getUsageComparison({ from: startDate, to: endDate });
+    const machine = comparison.machines.find((item) => item.machineId === machineId);
+    const currentInactivityCost = machine?.inactivityCost ?? 0;
+    const targetReductionRate = 0.2;
+    return {
+      machineId,
+      startDate,
+      endDate,
+      currentInactivityCost,
+      targetReductionRate,
+      projectedSavings: Number((currentInactivityCost * targetReductionRate).toFixed(2)),
+      currency: 'PEN',
+      explanation: 'El ahorro proyectado estima cuánto podría reducirse el costo por inactividad si la obra disminuye en 20% las horas inactivas del periodo seleccionado.',
+    };
   }
 
   calculateUsageHours(records: StateRecordLike[], startDate: Date, endDate: Date) {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createMachine, getMachineById, getMachines, getMachineStatus } from "@/lib/api/machinery";
+import { createMachine, getMachineById, getMachines, getMachineStatus, updateMachine, decommissionMachine } from "@/lib/api/machinery";
 import type { CreateMachineRequest } from "@/types/api";
 
 export const machineryKeys = {
@@ -9,12 +9,15 @@ export const machineryKeys = {
   status: (id: number) => [...machineryKeys.all, "status", id] as const
 };
 
-export function useMachines() {
+export function useMachines(siteId?: number) {
   return useQuery({
-    queryKey: machineryKeys.lists(),
-    queryFn: getMachines
+    queryKey: [...machineryKeys.lists(), siteId ?? null],
+    queryFn: () => getMachines(siteId)
   });
 }
+
+export function useUpdateMachineMutation() { return useMutation({ mutationFn: ({ id, payload }: { id: number; payload: { code?: string; type?: string; siteId?: number } }) => updateMachine(id, payload) }); }
+export function useDecommissionMachineMutation() { return useMutation({ mutationFn: (id: number) => decommissionMachine(id) }); }
 
 export function useMachine(id: number, enabled = true) {
   return useQuery({

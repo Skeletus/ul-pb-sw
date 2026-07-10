@@ -5,5 +5,8 @@ export const routes = {
   machinery: "/machinery",
   newMachine: "/machinery/new",
   reports: "/reports",
-  alerts: "/alerts"
+  alerts: "/alerts",
+  profile: "/profile",
+  users: "/users",
+  reportsHistory: "/reports/history"
 } as const;

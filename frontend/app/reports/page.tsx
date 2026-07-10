@@ -19,6 +19,7 @@ import { useDailyReportMutation, useGeneratedDailyReports } from "@/features/rep
 import { getErrorMessage } from "@/lib/api/errors";
 import { formatDate, formatMoney, formatPercent } from "@/lib/utils";
 import { useUsageComparison } from "@/features/sprint2/queries";
+import { useSavingsProjection } from "@/features/reports/queries";
 import { downloadUsagePdf } from "@/lib/api/sprint2";
 
 const reportSchema = z.object({
@@ -42,6 +43,8 @@ function ReportsContent() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [downloadError, setDownloadError] = useState("");
   const comparison = useUsageComparison(comparisonFrom, comparisonTo);
+  const [savingsMachineId, setSavingsMachineId] = useState(0);
+  const savings = useSavingsProjection(savingsMachineId, comparisonFrom, comparisonTo);
   const generatedReportsQuery = useGeneratedDailyReports();
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
@@ -186,6 +189,11 @@ function ReportsContent() {
             </table>
           </DataTable>
         ) : null}
+      </section>
+      <section className="grid gap-4 rounded border bg-white p-6">
+        <h2 className="text-xl font-black text-workmeter-ink">Ahorro proyectado</h2>
+        <div className="flex flex-wrap gap-3"><select className="h-11 rounded border px-3" value={savingsMachineId} onChange={e=>setSavingsMachineId(Number(e.target.value))}><option value={0}>Selecciona una máquina</option>{machines.map(machine=><option key={machine.id} value={machine.id}>{machine.code}</option>)}</select><input className="h-11 rounded border px-3" type="date" value={comparisonFrom} onChange={e=>setComparisonFrom(e.target.value)}/><input className="h-11 rounded border px-3" type="date" value={comparisonTo} onChange={e=>setComparisonTo(e.target.value)}/></div>
+        {savings.isLoading?<LoadingState label="Calculando ahorro..."/>:null}{savings.isError?<ErrorState title="No se pudo calcular el ahorro" message={getErrorMessage(savings.error)}/>:null}{savings.data?<div className="grid gap-2 sm:grid-cols-3"><div><span className="text-sm text-workmeter-steel">Costo actual</span><p className="text-2xl font-black">{formatMoney(savings.data.currentInactivityCost)}</p></div><div><span className="text-sm text-workmeter-steel">Reducción objetivo</span><p className="text-2xl font-black">{savings.data.targetReductionRate*100}%</p></div><div><span className="text-sm text-workmeter-steel">Ahorro proyectado</span><p className="text-2xl font-black text-emerald-700">{formatMoney(savings.data.projectedSavings)}</p></div><p className="text-sm text-workmeter-steel sm:col-span-3">{savings.data.explanation}</p></div>:null}
       </section>
 
       <section className="grid gap-4">

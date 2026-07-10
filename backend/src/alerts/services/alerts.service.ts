@@ -41,7 +41,13 @@ export class AlertsService {
     evaluatedAt: Date,
     client: DatabaseClient = this.prisma,
   ): Promise<AlertEvaluation> {
-    if (minutesBetween(inactiveSince, evaluatedAt) <= this.alertThresholdMinutes) {
+    const configured = this.prisma.alertConfiguration
+      ? await this.prisma.alertConfiguration.findUnique({ where: { machineId } })
+      : null;
+    const threshold = configured?.active === false
+      ? Number.POSITIVE_INFINITY
+      : configured?.inactivityThresholdMinutes ?? this.alertThresholdMinutes;
+    if (minutesBetween(inactiveSince, evaluatedAt) <= threshold) {
       return { alert: null, created: false };
     }
 
@@ -121,12 +127,11 @@ export class AlertsService {
   @Cron('0 * * * * *')
   async evaluateOpenInactivityPeriods(now = new Date()) {
     try {
-      const cutoff = new Date(now.getTime() - this.alertThresholdMinutes * 60000);
       const openPeriods = await this.prisma.machineStateRecord.findMany({
         where: {
           status: MachineStatus.INACTIVE,
           endDate: null,
-          startDate: { lt: cutoff },
+          startDate: { lt: now },
         },
       });
 

@@ -11,9 +11,11 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useMachines } from "@/features/machinery/queries";
 import { getErrorMessage } from "@/lib/api/errors";
 import { routes } from "@/lib/routes";
+import { useSites } from "@/features/sites/queries";
+import { useState } from "react";
 
 export default function MachineryPage() {
-  const machinesQuery = useMachines();
+  const [siteId,setSiteId]=useState(0); const machinesQuery = useMachines(siteId||undefined); const sites=useSites();
   const machines = machinesQuery.data ?? [];
 
   return (
@@ -29,6 +31,7 @@ export default function MachineryPage() {
             </LinkButton>
           }
         />
+        <select className="h-11 max-w-xs rounded border px-3" value={siteId} onChange={e=>setSiteId(Number(e.target.value))}><option value={0}>Todas las obras</option>{sites.data?.map(site=><option key={site.id} value={site.id}>{site.name}</option>)}</select>
 
         {machinesQuery.isLoading ? <LoadingState /> : null}
         {machinesQuery.isError ? (

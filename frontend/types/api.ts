@@ -20,11 +20,17 @@ export interface AuthUser {
   name: string;
   email: string;
   status: string;
+  role?: { id: number; name: string } | null;
 }
 
 export interface CurrentUser extends AuthUser {
   createdAt: string;
 }
+
+export interface SavingsProjection { machineId: number; startDate: string; endDate: string; currentInactivityCost: number; targetReductionRate: number; projectedSavings: number; currency: string; explanation: string; }
+export interface AlertConfiguration { machineId: number; inactivityThresholdMinutes: number; active: boolean; customized?: boolean; }
+export interface Role { id: number; name: string; }
+export interface UserSummary { id: number; name: string; email: string; status: string; role: Role | null; }
 
 export interface AuthResponse {
   accessToken: string;

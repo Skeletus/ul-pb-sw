@@ -5,6 +5,7 @@ import { DailyReportQueryDto } from '../dto/daily-report-query.dto';
 import { ReportsService } from '../services/reports.service';
 import { ListDailyReportsQueryDto } from '../dto/list-daily-reports-query.dto';
 import { UsageComparisonQueryDto } from '../dto/usage-comparison-query.dto';
+import { SavingsProjectionQueryDto } from '../dto/savings-projection-query.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
@@ -29,6 +30,9 @@ export class ReportsController {
   getUsageComparison(@Query() query: UsageComparisonQueryDto) {
     return this.reportsService.getUsageComparison(query);
   }
+
+  @Get('savings-projection')
+  getSavingsProjection(@Query() query: SavingsProjectionQueryDto) { return this.reportsService.getSavingsProjection(query.machineId, query.startDate, query.endDate); }
 
   @Get('machines/:machineId/pdf')
   async downloadPdf(

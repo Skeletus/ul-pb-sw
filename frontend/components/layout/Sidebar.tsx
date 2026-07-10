@@ -1,20 +1,25 @@
 "use client";
 
-import { Bell, Gauge, ClipboardList, Truck } from "lucide-react";
+import { Bell, Gauge, ClipboardList, Truck, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { routes } from "@/lib/routes";
+import { useAuthStore } from "@/features/auth/auth-store";
 
 const items = [
   { label: "Dashboard", href: routes.dashboard, icon: Gauge },
   { label: "Maquinaria", href: routes.machinery, icon: Truck },
   { label: "Reportes", href: routes.reports, icon: ClipboardList },
-  { label: "Alertas", href: routes.alerts, icon: Bell }
+  { label: "Alertas", href: routes.alerts, icon: Bell },
+  { label: "Historial", href: routes.reportsHistory, icon: ClipboardList },
+  { label: "Perfil", href: routes.profile, icon: UserRound },
+  { label: "Usuarios", href: routes.users, icon: Users, adminOnly: true }
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
 
   return (
     <aside className="hidden min-h-screen w-72 shrink-0 border-r border-white/10 bg-workmeter-ink text-white lg:block">
@@ -30,7 +35,7 @@ export function Sidebar() {
         </Link>
 
         <nav className="mt-8 grid gap-2">
-          {items.map((item) => {
+          {items.filter((item) => !item.adminOnly || user?.role?.name === "ADMINISTRATOR").map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (

@@ -13,7 +13,8 @@ const mobileItems = [
   { label: "Dashboard", href: routes.dashboard },
   { label: "Maquinaria", href: routes.machinery },
   { label: "Reportes", href: routes.reports },
-  { label: "Alertas", href: routes.alerts }
+  { label: "Alertas", href: routes.alerts },
+  { label: "Perfil", href: routes.profile }
 ];
 
 export function Topbar() {

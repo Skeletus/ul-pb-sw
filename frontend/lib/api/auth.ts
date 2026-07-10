@@ -18,3 +18,11 @@ export function logout() {
 export function getCurrentUser() {
   return apiRequest<CurrentUser>("/auth/me");
 }
+
+export function updateProfile(payload: { name?: string; email?: string }) {
+  return apiRequest<CurrentUser>("/auth/me", { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function changePassword(payload: { currentPassword: string; newPassword: string }) {
+  return apiRequest<{ message: string }>("/auth/change-password", { method: "POST", body: JSON.stringify(payload) });
+}

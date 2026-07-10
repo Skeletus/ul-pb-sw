@@ -14,7 +14,7 @@ No incluye endpoints ni modelos que solo aparecen como plan en `ContextMD.md` o 
 Authorization: Bearer <token>
 ```
 
-- **Roles:** no hay RBAC ni roles implementados. Los endpoints protegidos solo validan JWT, sesion existente/no expirada y usuario con `status === "ACTIVE"`.
+- **Roles:** los endpoints generales validan JWT, sesion y usuario activo. Las operaciones administrativas requieren el rol `ADMINISTRATOR`.
 - **Fechas/horas:** los `Date` de Nest/Prisma se serializan como strings ISO 8601, normalmente UTC con sufijo `Z`, por ejemplo `2026-07-08T08:00:00.000Z`.
 - **Reportes diarios:** `date` identifica la fecha local de inicio de jornada. La ventana se obtiene de `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`; los valores predeterminados son `08:00`, `17:00` y `America/Lima`.
 - **Decimales Prisma:** los campos `Decimal` persistidos por Prisma se devuelven como strings en JSON, por ejemplo `"120"` o `"12.4000"`. Los calculos de reportes se devuelven como numbers.
@@ -1069,3 +1069,20 @@ type IncidentStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
 - `POST /api/alerts/:alertId/incidents` body `{ title, description, severity }`: crea una incidencia `OPEN` usando el usuario autenticado y las relaciones de maquina/obra de la alerta. `404` si no existe la alerta.
 - `GET /api/alerts/:alertId/incidents`: historial de la alerta.
 - `GET /api/machines/:machineId/incidents`: historial de la maquina.
+
+## Sprint 3
+
+Las siguientes rutas usan JWT Bearer; las marcadas ADMINISTRATOR requieren ese rol. Las fechas de reportes usan `YYYY-MM-DD` y `WORK_TIMEZONE`.
+
+- `GET /api/auth/me`, `PATCH /api/auth/me` body `{ name?, email? }`, `POST /api/auth/change-password` body `{ currentPassword, newPassword }`.
+- `GET /api/roles`, `GET /api/permissions`, `GET /api/users`, `POST /api/users/:id/role` body `{ roleId }` (ADMINISTRATOR).
+- `GET /api/sites`; `GET /api/machines?siteId=`; `PATCH /api/machines/:id` (campos tecnicos, ADMINISTRATOR); `PATCH /api/machines/:id/decommission` (ADMINISTRATOR).
+- `GET /api/reports/daily/generated?machineId=&from=&to=` mantiene filtros anteriores y agrega rango opcional, ordenado por `startDate` descendente.
+- `GET /api/reports/savings-projection?machineId=&startDate=&endDate=` devuelve costo actual, tasa objetivo, ahorro proyectado, moneda y explicacion.
+- `GET /api/machines/:id/alert-configuration` devuelve configuracion personalizada o `ALERT_THRESHOLD_MINUTES` (fallback 30); `PUT` con `{ inactivityThresholdMinutes, active? }` (ADMINISTRATOR) crea/actualiza y exige minutos positivos.
+
+La formula de ahorro es `projectedSavings = currentInactivityCost * targetReductionRate`, con `targetReductionRate = 0.20`; sin datos se devuelven valores cero.
+
+### Eventos realtime
+
+El Socket.IO autenticado publica `machine.status.changed`, `alert.created` y `alert.resolved`. Los payloads incluyen identificador de maquina, estado/prioridad, obra y marcas temporales (`effectiveAt`, `generationDate`, `resolvedDate`). El cliente invalida maquinaria, dashboard y alertas al recibirlos y vuelve a consultar al reconectar.

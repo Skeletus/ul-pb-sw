@@ -15,9 +15,11 @@ import { useMachines } from "@/features/machinery/queries";
 import { getErrorMessage } from "@/lib/api/errors";
 import { routes } from "@/lib/routes";
 import { MachineStatus } from "@/types/api";
+import { useSites } from "@/features/sites/queries";
+import { useState } from "react";
 
 export default function DashboardPage() {
-  const machinesQuery = useMachines();
+  const [siteId,setSiteId]=useState(0); const machinesQuery = useMachines(siteId||undefined); const sites=useSites();
   const activeAlertsQuery = useActiveAlerts();
 
   const machines = machinesQuery.data ?? [];
@@ -34,6 +36,7 @@ export default function DashboardPage() {
           description="Vista operativa basada en maquinaria y alertas disponibles en la API."
           action={<LinkButton href={routes.newMachine}>Registrar maquinaria</LinkButton>}
         />
+        <select className="h-11 max-w-xs rounded border px-3" value={siteId} onChange={e=>setSiteId(Number(e.target.value))}><option value={0}>Todas las obras</option>{sites.data?.map(site=><option key={site.id} value={site.id}>{site.name}</option>)}</select>
 
         {machinesQuery.isLoading || activeAlertsQuery.isLoading ? <LoadingState /> : null}
 
