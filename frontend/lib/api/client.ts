@@ -74,3 +74,16 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return (await response.json()) as T;
 }
+
+export async function apiBlobRequest(path: string): Promise<Blob> {
+  const token = readStoredToken();
+  const response = await fetch(buildUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+  });
+  if (!response.ok) {
+    const apiError = await parseError(response);
+    if (apiError.statusCode === 401) emitUnauthorized();
+    throw new ApiClientError(apiError);
+  }
+  return response.blob();
+}

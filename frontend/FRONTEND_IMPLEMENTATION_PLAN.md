@@ -177,3 +177,10 @@ frontend/
   - Sin reporte consultado: "Selecciona una maquina y fecha para consultar el reporte."
 - `401`: limpieza de sesion y redireccion a `/login`.
 - `500`/errores desconocidos: mensaje general sin exponer detalles tecnicos internos.
+
+## 11. Sprint 2 implementado
+
+- `/forgot-password` y `/reset-password` consumen los endpoints publicos de recuperacion.
+- El detalle de maquinaria administra contrato/sensor y consulta consumo real por rango.
+- El detalle de alerta registra y lista incidencias.
+- `/reports` compara multiples maquinas, resalta baja utilizacion y descarga el PDF del backend.

@@ -28,6 +28,7 @@ database "Base de Datos" as Database
 component "Dispositivos IoT" as IoT <<external>>
 component "Servicio de Notificaciones" as Notifications <<external>>
 component "Servicio de Almacenamiento de Archivos" as Storage <<external>>
+component "Servidor SMTP" as SMTP <<external>>
 component "Herramientas BI externas" as BI <<external>>
 
 Frontend --> Backend : HTTPS
@@ -55,6 +56,7 @@ ReportsAPI ..> Database
 CostsAPI ..> Database
 
 AlertEngine ..> Notifications
+AuthAPI ..> SMTP : password reset email
 ReportsEngine ..> Storage
 ReportsEngine ..> BI
 OptimizationEngine ..> ReportsEngine

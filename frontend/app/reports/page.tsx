@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClipboardList, Loader2 } from "lucide-react";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,6 +18,8 @@ import { useMachines } from "@/features/machinery/queries";
 import { useDailyReportMutation, useGeneratedDailyReports } from "@/features/reports/queries";
 import { getErrorMessage } from "@/lib/api/errors";
 import { formatDate, formatMoney, formatPercent } from "@/lib/utils";
+import { useUsageComparison } from "@/features/sprint2/queries";
+import { downloadUsagePdf } from "@/lib/api/sprint2";
 
 const reportSchema = z.object({
   machineId: z.coerce.number().int("Selecciona una maquinaria valida.").positive("Selecciona una maquinaria."),
@@ -35,6 +37,11 @@ function ReportsContent() {
   const machineIdFromUrl = Number(searchParams.get("machineId"));
   const machinesQuery = useMachines();
   const reportMutation = useDailyReportMutation();
+  const [comparisonFrom, setComparisonFrom] = useState(todayUtcDate());
+  const [comparisonTo, setComparisonTo] = useState(todayUtcDate());
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState("");
+  const comparison = useUsageComparison(comparisonFrom, comparisonTo);
   const generatedReportsQuery = useGeneratedDailyReports();
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
@@ -179,6 +186,16 @@ function ReportsContent() {
             </table>
           </DataTable>
         ) : null}
+      </section>
+
+      <section className="grid gap-4">
+        <div><h2 className="text-xl font-black text-workmeter-ink">Comparación de utilización y costos</h2><p className="text-sm text-workmeter-steel">Las máquinas sin horas clasificadas no se incluyen.</p></div>
+        <div className="flex flex-wrap gap-3"><input className="h-11 rounded border px-3" type="date" value={comparisonFrom} onChange={(event) => setComparisonFrom(event.target.value)} /><input className="h-11 rounded border px-3" type="date" value={comparisonTo} onChange={(event) => setComparisonTo(event.target.value)} /></div>
+        {comparison.isLoading ? <LoadingState label="Calculando comparación..." /> : null}
+        {comparison.isError ? <ErrorState title="No se pudo calcular la comparación" message={getErrorMessage(comparison.error)} /> : null}
+        {comparison.data?.machines.length === 0 ? <EmptyState title="No hay máquinas con datos clasificados en el periodo." /> : null}
+        {downloadError ? <p className="font-bold text-red-700">{downloadError}</p> : null}
+        {comparison.data?.machines.map((machine) => <article key={machine.machineId} className={machine.lowUtilization ? "rounded border-2 border-amber-500 bg-amber-50 p-5" : "rounded border border-slate-200 bg-white p-5"}><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black">{machine.machineCode} · {machine.siteName}</h3><p className="text-sm text-workmeter-steel">{machine.lowUtilization ? `Baja utilización (umbral ${comparison.data.lowUtilizationThreshold}%)` : "Utilización dentro del umbral"}</p></div><button className="rounded bg-workmeter-blue px-4 py-2 text-sm font-black text-white" disabled={downloadingId === machine.machineId} onClick={async () => { setDownloadingId(machine.machineId); setDownloadError(""); try { const blob = await downloadUsagePdf(machine.machineId, comparisonFrom, comparisonTo); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `workmeter-${machine.machineCode}.pdf`; link.click(); URL.revokeObjectURL(url); } catch (caught) { setDownloadError(getErrorMessage(caught)); } finally { setDownloadingId(null); } }}>{downloadingId === machine.machineId ? "Generando..." : "Descargar PDF"}</button></div><div className="mt-4 grid gap-3 sm:grid-cols-4"><div><b>Activas</b><div className="mt-1 h-3 bg-emerald-500" style={{ width: `${machine.effectiveUsagePercentage}%` }} /><span>{machine.activeHours} h</span></div><div><b>Inactivas</b><div className="mt-1 h-3 bg-amber-500" style={{ width: `${100 - machine.effectiveUsagePercentage}%` }} /><span>{machine.inactiveHours} h</span></div><div><b>Uso efectivo</b><p>{formatPercent(machine.effectiveUsagePercentage)}</p></div><div><b>Costo inactividad</b><p>{formatMoney(machine.inactivityCost)}</p><small>Operativo disponible: {formatMoney(machine.availableOperatingCost)}</small></div></div></article>)}
       </section>
     </div>
   );

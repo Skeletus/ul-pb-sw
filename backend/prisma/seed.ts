@@ -1,4 +1,4 @@
-import { PrismaClient, MachineStatus } from '@prisma/client';
+import { ContractStatus, MachineStatus, SensorStatus, PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -83,6 +83,21 @@ async function main() {
   const activeEnd = new Date(dayStart.getTime() + 2 * 60 * 60 * 1000);
   const inactiveEnd = new Date(activeEnd.getTime() + 45 * 60 * 1000);
 
+  const activeSensor = await prisma.sensor.upsert({
+    where: { identifier: 'SEN-MIX-001' },
+    update: { machineId: machines[0].id, status: SensorStatus.ACTIVE, lastConnectionAt: new Date() },
+    create: { identifier: 'SEN-MIX-001', type: 'MIXED', machineId: machines[0].id, status: SensorStatus.ACTIVE, installedAt: new Date(), lastConnectionAt: new Date() },
+  });
+  await prisma.sensor.upsert({
+    where: { identifier: 'SEN-ENE-AVAILABLE' },
+    update: { machineId: null, status: SensorStatus.AVAILABLE },
+    create: { identifier: 'SEN-ENE-AVAILABLE', type: 'ENERGY', status: SensorStatus.AVAILABLE },
+  });
+  const existingContract = await prisma.rentalContract.findFirst({ where: { machineId: machines[0].id, status: ContractStatus.VALID } });
+  if (!existingContract) {
+    await prisma.rentalContract.create({ data: { machineId: machines[0].id, startDate: dayStart, endDate: new Date(dayStart.getTime() + 30 * 86400000), durationDays: 31, totalCost: 24000, hourlyRate: 120, status: ContractStatus.VALID } });
+  }
+
   await prisma.machineStateRecord.deleteMany({ where: { machineId: machines[0].id } });
   await prisma.sensorReading.deleteMany({ where: { machineId: machines[0].id } });
 
@@ -112,18 +127,21 @@ async function main() {
     data: [
       {
         machineId: machines[0].id,
+        sensorId: activeSensor.id,
         timestamp: dayStart,
         vibration: 0.8,
         energyConsumption: 12,
       },
       {
         machineId: machines[0].id,
+        sensorId: activeSensor.id,
         timestamp: activeEnd,
         vibration: 0.1,
         energyConsumption: 2,
       },
       {
         machineId: machines[0].id,
+        sensorId: activeSensor.id,
         timestamp: inactiveEnd,
         vibration: 0.1,
         energyConsumption: 2,

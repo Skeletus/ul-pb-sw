@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -131,6 +132,7 @@ export default function LoginPage() {
               ) : null}
             </label>
 
+            <Link className="text-sm font-bold text-workmeter-blue" href="/forgot-password">Olvidé mi contraseña</Link>
             <Button className="h-12 w-full" type="submit" disabled={loginMutation.isPending}>
               {loginMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
               Iniciar sesion

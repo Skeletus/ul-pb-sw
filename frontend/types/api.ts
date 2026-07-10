@@ -117,6 +117,17 @@ export interface DailyReport {
   hasData: boolean;
 }
 
+export type ContractStatus = "VALID" | "EXPIRED" | "CANCELLED" | "RENEWED";
+export interface RentalContract { id: number; machineId: number; startDate: string; endDate: string; durationDays: number; totalCost: string; hourlyRate: string; status: ContractStatus; }
+export type SensorStatus = "AVAILABLE" | "ASSOCIATED" | "ACTIVE" | "DISCONNECTED" | "ERROR";
+export interface Sensor { id: number; machineId: number | null; identifier: string; type: string; status: SensorStatus; installedAt: string | null; lastConnectionAt: string | null; }
+export interface EnergyConsumption { machineId: number; sensorId: number; from: string; to: string; timeZone: string; interval: "HOUR" | "DAY" | null; totalConsumption: number; averageConsumption: number | null; minimumConsumption: number | null; maximumConsumption: number | null; readingCount: number; }
+export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type IncidentStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
+export interface OperationalIncident { id: number; alertId: number; machineId: number; siteId: number; title: string; description: string; severity: IncidentSeverity; status: IncidentStatus; registrationDate: string; registeredBy: Pick<AuthUser, "id" | "name" | "email">; }
+export interface UsageComparisonMachine { machineId: number; machineCode: string; machineType: string; siteId: number; siteName: string; activeHours: number; inactiveHours: number; totalClassifiedHours: number; effectiveUsagePercentage: number; hourlyRate: number; inactivityCost: number; availableOperatingCost: number; lowUtilization: boolean; }
+export interface UsageComparison { from: string; to: string; timeZone: string; lowUtilizationThreshold: number; machines: UsageComparisonMachine[]; }
+
 export interface MachineStatusChangedEvent {
   machineId: number;
   machineCode: string;

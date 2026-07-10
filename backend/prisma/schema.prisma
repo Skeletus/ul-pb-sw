@@ -21,6 +21,34 @@ enum AlertStatus {
   RESOLVED
 }
 
+enum ContractStatus {
+  VALID
+  EXPIRED
+  CANCELLED
+  RENEWED
+}
+
+enum SensorStatus {
+  AVAILABLE
+  ASSOCIATED
+  ACTIVE
+  DISCONNECTED
+  ERROR
+}
+
+enum IncidentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   name         String    @db.VarChar(100)
@@ -29,8 +57,23 @@ model User {
   status       String    @db.VarChar(30)
   createdAt    DateTime  @default(now()) @map("created_at")
   sessions     Session[]
+  passwordResetTokens PasswordResetToken[]
+  incidents    OperationalIncident[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model Session {
@@ -51,6 +94,7 @@ model Site {
   location String?   @db.VarChar(180)
   machines Machine[]
   reports  Report[]
+  incidents OperationalIncident[]
 
   @@map("sites")
 }
@@ -68,20 +112,58 @@ model Machine {
   alerts              Alert[]
   reports             Report[]
   inactivityCosts     InactivityCost[]
+  rentalContracts     RentalContract[]
+  sensors             Sensor[]
+  incidents           OperationalIncident[]
 
   @@index([siteId])
   @@map("machines")
 }
 
+model RentalContract {
+  id           Int            @id @default(autoincrement())
+  machineId    Int            @map("machine_id")
+  startDate    DateTime       @map("start_date") @db.Date
+  endDate      DateTime       @map("end_date") @db.Date
+  durationDays Int            @map("duration_days")
+  totalCost    Decimal        @map("total_cost") @db.Decimal(12, 2)
+  hourlyRate   Decimal        @map("hourly_rate") @db.Decimal(10, 2)
+  status       ContractStatus @default(VALID)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  machine      Machine        @relation(fields: [machineId], references: [id])
+
+  @@index([machineId, status])
+  @@map("rental_contracts")
+}
+
+model Sensor {
+  id               Int          @id @default(autoincrement())
+  machineId        Int?         @unique @map("machine_id")
+  identifier       String       @unique @db.VarChar(80)
+  type             String       @db.VarChar(60)
+  status           SensorStatus @default(AVAILABLE)
+  installedAt      DateTime?    @map("installed_at")
+  lastConnectionAt DateTime?    @map("last_connection_at")
+  machine          Machine?     @relation(fields: [machineId], references: [id])
+  readings         SensorReading[]
+
+  @@index([status])
+  @@map("sensors")
+}
+
 model SensorReading {
   id                Int      @id @default(autoincrement())
   machineId         Int      @map("machine_id")
+  sensorId          Int?     @map("sensor_id")
   timestamp         DateTime @default(now())
   vibration         Decimal  @db.Decimal(10, 4)
   energyConsumption Decimal  @map("energy_consumption") @db.Decimal(10, 4)
   machine           Machine  @relation(fields: [machineId], references: [id])
+  sensor            Sensor?  @relation(fields: [sensorId], references: [id])
 
   @@index([machineId, timestamp])
+  @@index([sensorId, timestamp])
   @@map("sensor_readings")
 }
 
@@ -108,9 +190,32 @@ model Alert {
   resolvedDate   DateTime?   @map("resolved_date")
   machine        Machine     @relation(fields: [machineId], references: [id])
   stateRecord    MachineStateRecord? @relation(fields: [stateRecordId], references: [id])
+  incidents      OperationalIncident[]
 
   @@index([machineId, status])
   @@map("alerts")
+}
+
+model OperationalIncident {
+  id               Int              @id @default(autoincrement())
+  alertId          Int              @map("alert_id")
+  machineId        Int              @map("machine_id")
+  siteId           Int              @map("site_id")
+  registeredById   Int              @map("registered_by_id")
+  title            String           @db.VarChar(120)
+  description      String           @db.VarChar(1000)
+  severity         IncidentSeverity
+  status           IncidentStatus   @default(OPEN)
+  registrationDate DateTime         @default(now()) @map("registration_date")
+  alert             Alert            @relation(fields: [alertId], references: [id])
+  machine           Machine          @relation(fields: [machineId], references: [id])
+  site              Site             @relation(fields: [siteId], references: [id])
+  registeredBy      User             @relation(fields: [registeredById], references: [id])
+
+  @@index([alertId, registrationDate])
+  @@index([machineId, registrationDate])
+  @@index([siteId])
+  @@map("operational_incidents")
 }
 
 model Report {

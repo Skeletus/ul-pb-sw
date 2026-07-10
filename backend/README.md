@@ -37,6 +37,14 @@ Variables principales:
 - `WORKDAY_START` (`HH:mm`, por defecto `08:00`)
 - `WORKDAY_END` (`HH:mm`, por defecto `17:00`)
 - `WORK_TIMEZONE` (zona IANA, por defecto `America/Lima`)
+- `LOW_UTILIZATION_THRESHOLD_PERCENT` (por defecto `40`)
+- `PASSWORD_RESET_EXPIRATION_MINUTES` (por defecto `30`)
+- `PASSWORD_RESET_URL`
+- `SMTP_URL` y `SMTP_FROM` para correo real de recuperacion
+
+## Sprint 2
+
+Incluye recuperacion de contraseña con token hasheado y SMTP, contratos de alquiler, sensores asociados, agregacion de consumo energetico, comparacion multi-maquina, PDF en memoria e incidencias operativas. El PDF no se almacena: se transmite con `application/pdf`. Ejecuta `npx prisma migrate deploy` y `npm run seed` despues de configurar PostgreSQL.
 
 La fecha de un reporte corresponde al inicio local de la jornada. Si `WORKDAY_END` es menor o igual que `WORKDAY_START`, la jornada termina al dia siguiente. El scheduler revisa el cierre cada minuto, genera un reporte por maquina y reutiliza el mismo registro mediante `upsert` si vuelve a ejecutarse.
 

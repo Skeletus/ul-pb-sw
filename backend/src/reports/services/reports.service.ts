@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { MachineStatus, Prisma } from '@prisma/client';
@@ -12,6 +12,8 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { DailyReportQueryDto } from '../dto/daily-report-query.dto';
 import { ListDailyReportsQueryDto } from '../dto/list-daily-reports-query.dto';
+import { UsageComparisonQueryDto } from '../dto/usage-comparison-query.dto';
+import PDFDocument = require('pdfkit');
 
 type StateRecordLike = {
   status: MachineStatus;
@@ -30,6 +32,7 @@ type StoredReport = Prisma.ReportGetPayload<{
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
   readonly workdayConfiguration: WorkdayConfiguration;
+  private readonly lowUtilizationThreshold: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -41,6 +44,9 @@ export class ReportsService {
       timeZone: configService?.get<string>('WORK_TIMEZONE') ?? 'America/Lima',
     };
     getWorkdayRange('2026-01-01', this.workdayConfiguration);
+    this.lowUtilizationThreshold = Number(
+      configService?.get('LOW_UTILIZATION_THRESHOLD_PERCENT') ?? 40,
+    );
   }
 
   async generateDailyReport(query: DailyReportQueryDto) {
@@ -173,6 +179,82 @@ export class ReportsService {
 
   calculateInactivityCost(inactiveHours: number, hourlyRate: number) {
     return inactiveHours * hourlyRate;
+  }
+
+  async getUsageComparison(query: UsageComparisonQueryDto) {
+    const startRange = this.getReportRange(query.from);
+    const endRange = this.getReportRange(query.to);
+    if (endRange.endDate <= startRange.startDate) {
+      throw new BadRequestException('Usage comparison range is invalid');
+    }
+    const threshold = query.lowUtilizationThreshold ?? this.lowUtilizationThreshold;
+    const machines = await this.prisma.machine.findMany({
+      where: { siteId: query.siteId },
+      include: { site: true },
+    });
+    const results = await Promise.all(
+      machines.map(async (machine) => {
+        const records = await this.prisma.machineStateRecord.findMany({
+          where: {
+            machineId: machine.id,
+            startDate: { lt: endRange.endDate },
+            OR: [{ endDate: null }, { endDate: { gt: startRange.startDate } }],
+          },
+        });
+        const usage = this.calculateUsageHours(records, startRange.startDate, endRange.endDate);
+        if (usage.totalClassifiedHours === 0 || usage.effectiveUsagePercentage === null) return null;
+        const hourlyRate = Number(machine.hourlyRate);
+        return {
+          machineId: machine.id,
+          machineCode: machine.code,
+          machineType: machine.type,
+          siteId: machine.siteId,
+          siteName: machine.site.name,
+          activeHours: Number(usage.activeHours.toFixed(2)),
+          inactiveHours: Number(usage.inactiveHours.toFixed(2)),
+          totalClassifiedHours: Number(usage.totalClassifiedHours.toFixed(2)),
+          effectiveUsagePercentage: Number(usage.effectiveUsagePercentage.toFixed(2)),
+          hourlyRate,
+          inactivityCost: Number(this.calculateInactivityCost(usage.inactiveHours, hourlyRate).toFixed(2)),
+          availableOperatingCost: Number((usage.totalClassifiedHours * hourlyRate).toFixed(2)),
+          lowUtilization: usage.effectiveUsagePercentage < threshold,
+        };
+      }),
+    );
+    return {
+      from: query.from,
+      to: query.to,
+      timeZone: this.workdayConfiguration.timeZone,
+      lowUtilizationThreshold: threshold,
+      machines: results.filter((result): result is NonNullable<typeof result> => result !== null)
+        .sort((left, right) => left.effectiveUsagePercentage - right.effectiveUsagePercentage),
+    };
+  }
+
+  async generateUsagePdf(machineId: number, query: UsageComparisonQueryDto): Promise<Buffer> {
+    const comparison = await this.getUsageComparison(query);
+    const machine = comparison.machines.find((item) => item.machineId === machineId);
+    if (!machine) throw new NotFoundException('Machine has no classified usage in the selected range');
+    const document = new PDFDocument({ margin: 50, size: 'A4' });
+    const chunks: Buffer[] = [];
+    document.on('data', (chunk: Buffer) => chunks.push(chunk));
+    const completed = new Promise<Buffer>((resolve, reject) => {
+      document.on('end', () => resolve(Buffer.concat(chunks)));
+      document.on('error', reject);
+    });
+    document.fontSize(20).text('WorkMeter - Reporte de uso efectivo');
+    document.moveDown().fontSize(11);
+    document.text(`Maquinaria: ${machine.machineCode} (${machine.machineType})`);
+    document.text(`Obra: ${machine.siteName}`);
+    document.text(`Periodo: ${query.from} a ${query.to}`);
+    document.text(`Horas activas: ${machine.activeHours}`);
+    document.text(`Horas inactivas: ${machine.inactiveHours}`);
+    document.text(`Uso efectivo: ${machine.effectiveUsagePercentage}%`);
+    document.text(`Tarifa: S/ ${machine.hourlyRate.toFixed(2)} por hora`);
+    document.text(`Costo por inactividad: S/ ${machine.inactivityCost.toFixed(2)}`);
+    document.text(`Generado: ${new Date().toISOString()}`);
+    document.end();
+    return completed;
   }
 
   getReportRange(date: string) {

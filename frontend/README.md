@@ -81,6 +81,10 @@ El mismo token se envia como `auth.token` al namespace Socket.IO `/realtime`. El
 - Reporte diario por maquina y fecha.
 - Listado de reportes generados automaticamente al cierre de jornada.
 - Alertas activas e historial.
+- Recuperacion y restablecimiento de contraseña.
+- Contrato, sensor y consumo energetico en detalle de maquinaria.
+- Detalle de alerta e incidencias persistidas.
+- Comparacion de utilizacion/costos y descarga PDF real.
 
 Los horarios y la zona de los reportes se configuran en el backend mediante `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`.
 

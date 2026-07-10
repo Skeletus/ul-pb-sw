@@ -34,6 +34,14 @@ entity sessions {
     *start_date: DATETIME
     expiration_date: DATETIME
 }
+entity password_reset_tokens {
+    *id: INT <<PK>>
+    --
+    *user_id: INT <<FK>>
+    *token_hash: VARCHAR(64) <<UNIQUE>>
+    *expires_at: DATETIME
+    consumed_at: DATETIME
+}
 entity audit_logs {
     *id: INT <<PK>>
     --
@@ -182,6 +190,7 @@ entity maintenance_history {
 roles ||--o{ role_permission
 permissions ||--o{ role_permission
 users ||--o{ sessions
+users ||--o{ password_reset_tokens
 users ||--o{ audit_logs
 sites ||--o{ machines
 sites ||--o{ alert_configurations

@@ -9,6 +9,9 @@ import { ReportsModule } from './reports/reports.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RealtimeModule } from './realtime/realtime.module';
+import { ContractsModule } from './contracts/contracts.module';
+import { SensorsModule } from './sensors/sensors.module';
+import { IncidentsModule } from './incidents/incidents.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { RealtimeModule } from './realtime/realtime.module';
     TelemetryModule,
     ReportsModule,
     RealtimeModule,
+    ContractsModule,
+    SensorsModule,
+    IncidentsModule,
   ],
 })
 export class AppModule {}

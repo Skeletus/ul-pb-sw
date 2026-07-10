@@ -4,6 +4,7 @@ import { MachineStatusBadge } from "@/components/machinery/MachineStatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/utils";
 import type { AlertWithMachine } from "@/types/api";
+import Link from "next/link";
 
 export function AlertsList({ alerts, emptyMessage }: { alerts: AlertWithMachine[]; emptyMessage: string }) {
   if (alerts.length === 0) {
@@ -38,6 +39,7 @@ export function AlertsList({ alerts, emptyMessage }: { alerts: AlertWithMachine[
                 <p className="mt-1 text-sm text-workmeter-steel">
                   Inactividad: {Math.round(alert.inactiveDurationMinutes)} min
                 </p>
+                <Link className="mt-3 inline-block text-sm font-black text-workmeter-blue" href={`/alerts/${alert.id}`}>Ver detalle</Link>
               </div>
             </div>
             <MachineStatusBadge status={alert.machine.currentStatus} />

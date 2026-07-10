@@ -1,0 +1,19 @@
+@startuml "Sequence: Compare utilization and costs"
+autonumber
+actor "Project Administrator" as Admin
+boundary "Frontend Web" as Frontend
+control "Reports API" as Reports
+database "Database" as DB
+control "PDF Generator" as PDF
+Admin -> Frontend : select site, dates and threshold
+Frontend -> Reports : GET /reports/usage-comparison
+Reports -> DB : query machines and overlapping state records
+Reports -> Reports : calculate usage and costs, exclude no-data machines
+Reports --> Frontend : ordered utilization comparison
+Frontend --> Admin : chart and low-utilization highlights
+Admin -> Frontend : download PDF
+Frontend -> Reports : GET /reports/machines/{id}/pdf
+Reports -> PDF : render real comparison data in memory
+PDF --> Reports : PDF bytes
+Reports --> Frontend : application/pdf attachment
+@enduml

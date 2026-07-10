@@ -143,4 +143,27 @@ describe('ReportsService', () => {
     expect(second.reportId).toBe(20);
     expect(transaction.report.upsert).toHaveBeenCalledTimes(2);
   });
+
+  it('orders multi-machine utilization and marks values below the threshold', async () => {
+    const prisma = {
+      machine: { findMany: jest.fn().mockResolvedValue([
+        { id: 1, code: 'LOW', type: 'A', siteId: 1, hourlyRate: new Prisma.Decimal(100), site: { name: 'Site' } },
+        { id: 2, code: 'HIGH', type: 'B', siteId: 1, hourlyRate: new Prisma.Decimal(100), site: { name: 'Site' } },
+      ]) },
+      machineStateRecord: { findMany: jest.fn()
+        .mockResolvedValueOnce([{ status: MachineStatus.ACTIVE, startDate: new Date('2026-07-08T13:00:00Z'), endDate: new Date('2026-07-08T14:00:00Z') }, { status: MachineStatus.INACTIVE, startDate: new Date('2026-07-08T14:00:00Z'), endDate: new Date('2026-07-08T17:00:00Z') }])
+        .mockResolvedValueOnce([{ status: MachineStatus.ACTIVE, startDate: new Date('2026-07-08T13:00:00Z'), endDate: new Date('2026-07-08T17:00:00Z') }]) },
+    };
+    const result = await new ReportsService(prisma as never).getUsageComparison({ from: '2026-07-08', to: '2026-07-08', lowUtilizationThreshold: 40 });
+    expect(result.machines.map((machine) => machine.machineCode)).toEqual(['LOW', 'HIGH']);
+    expect(result.machines[0]).toEqual(expect.objectContaining({ lowUtilization: true, inactivityCost: 300 }));
+  });
+
+  it('generates a non-empty PDF containing real report data', async () => {
+    const reportService = new ReportsService({} as never);
+    jest.spyOn(reportService, 'getUsageComparison').mockResolvedValue({ from: '2026-07-08', to: '2026-07-08', timeZone: 'America/Lima', lowUtilizationThreshold: 40, machines: [{ machineId: 1, machineCode: 'MACH-001', machineType: 'Excavator', siteId: 1, siteName: 'Site', activeHours: 2, inactiveHours: 1, totalClassifiedHours: 3, effectiveUsagePercentage: 66.67, hourlyRate: 100, inactivityCost: 100, availableOperatingCost: 300, lowUtilization: false }] });
+    const pdf = await reportService.generateUsagePdf(1, { from: '2026-07-08', to: '2026-07-08' });
+    expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
+    expect(pdf.length).toBeGreaterThan(500);
+  });
 });

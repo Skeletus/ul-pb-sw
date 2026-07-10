@@ -29,6 +29,7 @@ node "Servidor Backend API" as BackendServer {
 database "Base de datos relacional" as RelationalDB
 collections "Almacenamiento de archivos" as FileStorage
 cloud "Servicios externos" as ExternalServices
+cloud "Servidor SMTP" as SMTP
 
 VibrationSensor --> Gateway : MQTT/HTTP
 EnergySensor --> Gateway : MQTT/HTTP
@@ -48,4 +49,5 @@ TelemetryService --> RelationalDB : TCP/IP
 API --> RelationalDB : TCP/IP
 ReportsService --> FileStorage : HTTPS
 NotificationService --> ExternalServices : HTTPS
+API --> SMTP : SMTP/TLS
 @enduml

@@ -121,4 +121,12 @@ No se implementaran funcionalidades de Sprint 2, Sprint 3 o Sprint 4.
 - La jornada diaria se configura globalmente con `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`; el valor predeterminado es 08:00-17:00 en `America/Lima`.
 - Las lecturas fuera de orden se rechazan para mantener transiciones deterministas. Cada alerta se vincula de forma unica al intervalo continuo de inactividad que la origino.
 - No se agregara Redis porque no se usara cache, sesiones distribuidas ni blacklist de tokens en el MVP.
+
+## 11. Sprint 2 implementado
+
+- Auth: recuperacion con token SHA-256 de un solo uso, expiracion, SMTP e invalidacion de sesiones.
+- Machinery and contracts: `RentalContract` conserva historial y sincroniza la tarifa vigente.
+- Sensors and telemetry: asociacion exclusiva, lecturas vinculadas y agregados energeticos por rango.
+- Reports: comparacion de uso/costos y PDF binario generado en memoria.
+- Alerts and incidents: `OperationalIncident` separado de `Alert`, con usuario, maquina y obra.
 - Swagger se expondra en /api/docs y la API usara prefijo global /api.

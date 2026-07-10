@@ -5,6 +5,7 @@ describe('MonitoringService', () => {
   const reading = {
     id: 2,
     machineId: 1,
+    sensorId: null,
     timestamp: new Date('2026-07-08T10:06:00Z'),
     vibration: new Prisma.Decimal(0.1),
     energyConsumption: new Prisma.Decimal(2),

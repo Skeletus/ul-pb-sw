@@ -1,0 +1,14 @@
+@startuml "Sequence: Query energy consumption"
+autonumber
+actor "Site Supervisor" as Supervisor
+boundary "Frontend Web" as Frontend
+control "Telemetry API" as Telemetry
+database "Database" as DB
+Supervisor -> Frontend : select machine and period
+Frontend -> Telemetry : GET /telemetry/machine/{id}/energy
+Telemetry -> DB : validate machine and active associated sensor
+Telemetry -> DB : query sensor readings by timestamp
+Telemetry -> Telemetry : calculate total, average, min, max, count
+Telemetry --> Frontend : EnergyConsumption
+Frontend --> Supervisor : metrics or empty state
+@enduml

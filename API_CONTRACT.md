@@ -1004,3 +1004,68 @@ export interface ApiError {
 - La clasificacion implementa la regla sugerida: una lectura es operativa si `vibration >= VIBRATION_THRESHOLD` **o** `energyConsumption >= ENERGY_THRESHOLD`; solo permanece bajo umbral si ambos valores son inferiores.
 - Existe `HttpExceptionFilter` con `{ statusCode, path, error, timestamp }`, pero no esta registrado; el formato real de error es el estandar de NestJS.
 - Swagger declara `ApiOkResponse` para `POST /api/auth/login` y `POST /api/auth/logout`, pero al no usar `@HttpCode(200)`, Nest responde `201` en ejecucion real.
+
+## 7. Sprint 2
+
+Todos los endpoints de esta seccion usan JSON y requieren JWT Bearer, excepto los tres endpoints publicos de recuperacion. Las fechas de filtro se expresan en ISO 8601; las fechas de reportes `YYYY-MM-DD` se interpretan con `WORK_TIMEZONE`.
+
+### Password recovery
+
+- `POST /api/auth/forgot-password` body `{ email: string }`: responde `201` con `{ message: string }` tanto si el correo existe como si no. Para un usuario activo crea un token aleatorio, guarda solo SHA-256, invalida tokens anteriores y envia el enlace por SMTP.
+- `GET /api/auth/reset-password/validate?token=<token>`: responde `200` con `{ valid: true, expiresAt: string }`; `400` si es invalido, expiro o ya fue consumido.
+- `POST /api/auth/reset-password` body `{ token: string, newPassword: string }`: la contraseña requiere minimo 8 caracteres. Responde `201` con `{ message: "Password updated successfully" }`; consume el token e invalida todas las sesiones activas. `400` para token no utilizable.
+
+### Rental contracts
+
+```ts
+type ContractStatus = 'VALID' | 'EXPIRED' | 'CANCELLED' | 'RENEWED';
+interface RentalContract {
+  id: number; machineId: number; startDate: string; endDate: string;
+  durationDays: number; totalCost: string; hourlyRate: string; status: ContractStatus;
+}
+```
+
+- `POST /api/machines/:machineId/contracts` body `{ startDate, endDate, totalCost, hourlyRate }`: crea un contrato `VALID`, calcula `durationDays` y sincroniza `Machine.hourlyRate`. `400` por fechas incoherentes, `404` por maquina inexistente, `409` si ya hay contrato vigente.
+- `GET /api/machines/:machineId/contracts`: devuelve `RentalContract[]` en orden descendente.
+- `PATCH /api/contracts/:id`: acepta parcialmente los campos de creacion y `status`. Devuelve el contrato actualizado.
+
+### Sensors
+
+```ts
+type SensorStatus = 'AVAILABLE' | 'ASSOCIATED' | 'ACTIVE' | 'DISCONNECTED' | 'ERROR';
+```
+
+- `POST /api/sensors` body `{ identifier: string, type: string }`: registra un sensor disponible. `409` si el identificador existe.
+- `POST /api/machines/:machineId/sensor` body `{ identifier: string }`: valida existencia/disponibilidad y lo asocia como `ACTIVE`. `409` si la maquina ya tiene sensor activo o el sensor esta asociado.
+- `GET /api/machines/:machineId/sensor`: devuelve el sensor asociado o `null`; `404` si la maquina no existe.
+
+### Energy consumption
+
+`GET /api/telemetry/machine/:machineId/energy?from=<ISO>&to=<ISO>&interval=HOUR|DAY`
+
+```ts
+interface EnergyConsumption {
+  machineId: number; sensorId: number; from: string; to: string; timeZone: string;
+  interval: 'HOUR' | 'DAY' | null; totalConsumption: number;
+  averageConsumption: number | null; minimumConsumption: number | null;
+  maximumConsumption: number | null; readingCount: number;
+}
+```
+
+Incluye lecturas del sensor activo y lecturas historicas compatibles sin `sensorId`. `400` por rango invalido; `404` por maquina o sensor activo inexistente.
+
+### Usage comparison and PDF
+
+- `GET /api/reports/usage-comparison?from=YYYY-MM-DD&to=YYYY-MM-DD&siteId=&lowUtilizationThreshold=`: devuelve `{ from, to, timeZone, lowUtilizationThreshold, machines }`. Cada maquina contiene horas activas/inactivas, porcentaje, tarifa, costo de inactividad, costo operativo disponible y `lowUtilization`. Excluye maquinas sin datos y ordena de menor a mayor utilizacion.
+- `GET /api/reports/machines/:machineId/pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`: responde binario con `Content-Type: application/pdf` y `Content-Disposition: attachment`. `404` si la maquina no tiene datos clasificados en el rango.
+
+### Operational incidents
+
+```ts
+type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+type IncidentStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+```
+
+- `POST /api/alerts/:alertId/incidents` body `{ title, description, severity }`: crea una incidencia `OPEN` usando el usuario autenticado y las relaciones de maquina/obra de la alerta. `404` si no existe la alerta.
+- `GET /api/alerts/:alertId/incidents`: historial de la alerta.
+- `GET /api/machines/:machineId/incidents`: historial de la maquina.
