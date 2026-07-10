@@ -34,6 +34,11 @@ Variables principales:
 - `ENERGY_THRESHOLD`
 - `INACTIVITY_THRESHOLD_MINUTES`
 - `ALERT_THRESHOLD_MINUTES`
+- `WORKDAY_START` (`HH:mm`, por defecto `08:00`)
+- `WORKDAY_END` (`HH:mm`, por defecto `17:00`)
+- `WORK_TIMEZONE` (zona IANA, por defecto `America/Lima`)
+
+La fecha de un reporte corresponde al inicio local de la jornada. Si `WORKDAY_END` es menor o igual que `WORKDAY_START`, la jornada termina al dia siguiente. El scheduler revisa el cierre cada minuto, genera un reporte por maquina y reutiliza el mismo registro mediante `upsert` si vuelve a ejecutarse.
 
 ## Levantar PostgreSQL con Docker
 
@@ -120,6 +125,11 @@ El simulador inicia sesion con el usuario demo, consulta las maquinas existentes
 - `GET /api/alerts`
 - `GET /api/alerts/:id`
 - `GET /api/reports/daily?machineId=1&date=2026-07-08`
+- `GET /api/reports/daily/generated`
+
+## Tiempo real
+
+El namespace Socket.IO es `/realtime`. El cliente debe enviar el JWT en `auth.token`; el gateway valida firma, sesion persistida y usuario activo. Se publican `machine.status.changed`, `alert.created` y `alert.resolved`. Socket.IO usa WebSocket con fallback a polling y, tras reconectar, el frontend recupera el estado vigente mediante REST.
 
 ## MVP Sprint 1
 
@@ -141,7 +151,6 @@ Pendiente para sprints futuros:
 - Incidencias operativas.
 - Notificaciones reales.
 - Exportacion PDF.
-- WebSockets.
 - Auditoria.
 - Mantenimiento.
 - Optimizacion, tendencias, ahorro proyectado y recomendaciones.

@@ -22,6 +22,7 @@ node "Servidor Backend API" as BackendServer {
   artifact "Servicio de telemetria" as TelemetryService
   artifact "Servicio WebSocket o polling" as RealtimeService
   artifact "Servicio de reportes" as ReportsService
+  artifact "Scheduler de jornada" as WorkdayScheduler
   artifact "Servicio de notificaciones" as NotificationService
 }
 
@@ -37,9 +38,11 @@ Connectivity --> TelemetryService : HTTPS
 SupervisorBrowser --> FrontendServer : HTTPS
 AdminBrowser --> FrontendServer : HTTPS
 FrontendServer --> API : HTTPS
-API --> RealtimeService : WebSocket/polling
+FrontendServer <--> RealtimeService : Socket.IO + JWT
+API --> RealtimeService : publish persisted events
 API --> TelemetryService : internal
 API --> ReportsService : internal
+WorkdayScheduler --> ReportsService : scheduled generation
 API --> NotificationService : internal
 TelemetryService --> RelationalDB : TCP/IP
 API --> RelationalDB : TCP/IP

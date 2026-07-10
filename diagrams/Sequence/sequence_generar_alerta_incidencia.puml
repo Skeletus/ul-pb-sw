@@ -8,11 +8,14 @@ database "Database" as DB
 actor "Notification Service" as NotificationService
 actor "Site Supervisor" as Supervisor
 boundary "Frontend Web" as Frontend
+control "Authenticated Realtime Gateway" as RealtimeGateway
 
 MonitoringService -> AlertEngine : evaluate(machine, inactiveTime, threshold)
 activate AlertEngine
 alt inactive > 30 minutes or exceeds threshold
   AlertEngine -> DB : insert high-priority alert
+  AlertEngine -> RealtimeGateway : alert.created
+  RealtimeGateway --> Frontend : high-priority alert event
   AlertEngine -> NotificationService : send alert
   NotificationService --> Supervisor : notification
   Supervisor -> Frontend : review alert
@@ -28,4 +31,11 @@ else no critical condition
 end
 AlertEngine --> MonitoringService : evaluation result
 deactivate AlertEngine
+
+... machine returns to active ...
+MonitoringService -> AlertEngine : resolve active alert
+AlertEngine -> DB : set RESOLVED and resolvedDate
+AlertEngine -> RealtimeGateway : alert.resolved
+RealtimeGateway --> Frontend : resolved alert event
+Frontend -> API : refetch active alerts and history
 @enduml

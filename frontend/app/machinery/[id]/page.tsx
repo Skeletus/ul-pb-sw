@@ -4,7 +4,7 @@ import { Activity, Clock, Gauge, Zap } from "lucide-react";
 import { useParams } from "next/navigation";
 import { AlertsList } from "@/components/alerts/AlertsList";
 import { AppShell } from "@/components/layout/AppShell";
-import { MachineStatusBadge } from "@/components/machinery/MachineStatusBadge";
+import { getMachineStatusLabel, MachineStatusBadge } from "@/components/machinery/MachineStatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -89,7 +89,7 @@ export default function MachineDetailPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
                 label="Estado actual"
-                value={statusQuery.data?.currentStatus ?? machine.currentStatus}
+                value={getMachineStatusLabel(statusQuery.data?.currentStatus ?? machine.currentStatus)}
                 icon={Gauge}
                 tone={machine.currentStatus === "ACTIVE" ? "green" : machine.currentStatus === "INACTIVE" ? "yellow" : "slate"}
               />

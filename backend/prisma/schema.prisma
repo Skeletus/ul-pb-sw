@@ -92,6 +92,7 @@ model MachineStateRecord {
   startDate DateTime      @map("start_date")
   endDate   DateTime?     @map("end_date")
   machine   Machine       @relation(fields: [machineId], references: [id])
+  alerts    Alert[]
 
   @@index([machineId, startDate])
   @@map("machine_state_records")
@@ -100,11 +101,13 @@ model MachineStateRecord {
 model Alert {
   id             Int         @id @default(autoincrement())
   machineId      Int         @map("machine_id")
+  stateRecordId  Int?        @unique @map("state_record_id")
   priority       String      @db.VarChar(30)
   status         AlertStatus @default(ACTIVE)
   generationDate DateTime    @default(now()) @map("generation_date")
   resolvedDate   DateTime?   @map("resolved_date")
   machine        Machine     @relation(fields: [machineId], references: [id])
+  stateRecord    MachineStateRecord? @relation(fields: [stateRecordId], references: [id])
 
   @@index([machineId, status])
   @@map("alerts")
@@ -118,6 +121,11 @@ model Report {
   startDate       DateTime         @map("start_date")
   endDate         DateTime         @map("end_date")
   fileUrl         String?          @map("file_url") @db.VarChar(255)
+  generatedAt     DateTime         @default(now()) @map("generated_at")
+  activeHours     Decimal          @default(0) @map("active_hours") @db.Decimal(10, 2)
+  inactiveHours   Decimal          @default(0) @map("inactive_hours") @db.Decimal(10, 2)
+  totalClassifiedHours Decimal      @default(0) @map("total_classified_hours") @db.Decimal(10, 2)
+  effectiveUsagePercentage Decimal? @map("effective_usage_percentage") @db.Decimal(5, 2)
   site            Site             @relation(fields: [siteId], references: [id])
   machine         Machine          @relation(fields: [machineId], references: [id])
   inactivityCosts InactivityCost[]

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MonitoringService } from '../../monitoring/services/monitoring.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTelemetryDto } from '../dto/create-telemetry.dto';
@@ -18,12 +18,23 @@ export class TelemetryService {
       throw new NotFoundException('Machine not found');
     }
 
+    const timestamp = createTelemetryDto.timestamp ? new Date(createTelemetryDto.timestamp) : new Date();
+    const latestReading = await this.prisma.sensorReading.findFirst({
+      where: { machineId: createTelemetryDto.machineId },
+      orderBy: { timestamp: 'desc' },
+    });
+    if (latestReading && timestamp <= latestReading.timestamp) {
+      throw new BadRequestException(
+        'Telemetry timestamp must be later than the latest accepted reading',
+      );
+    }
+
     const reading = await this.prisma.sensorReading.create({
       data: {
         machineId: createTelemetryDto.machineId,
         vibration: createTelemetryDto.vibrationValue,
         energyConsumption: createTelemetryDto.energyConsumption,
-        timestamp: createTelemetryDto.timestamp ? new Date(createTelemetryDto.timestamp) : new Date(),
+        timestamp,
       },
     });
 

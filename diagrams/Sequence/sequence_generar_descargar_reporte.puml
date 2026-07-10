@@ -8,6 +8,12 @@ control "Report Engine" as ReportEngine
 database "Database" as DB
 control "PDF Generator" as PDF
 collections "File Storage" as Storage
+control "Workday Scheduler" as Scheduler
+
+Scheduler -> ReportEngine : generateDailyReports(local closing time)
+ReportEngine -> DB : query overlapping machine state periods
+ReportEngine -> DB : upsert daily report and inactivity cost
+ReportEngine --> Scheduler : generated report ids / isolated errors
 
 Admin -> Frontend : requestReport(filters)
 Frontend -> API : POST /reports

@@ -21,6 +21,8 @@ component "Backend API" as Backend {
 component "Motor de Monitoreo" as MonitoringEngine
 component "Motor de Alertas" as AlertEngine
 component "Motor de Reportes" as ReportsEngine
+component "Scheduler de Jornada" as WorkdayScheduler
+component "Gateway Realtime Autenticado" as RealtimeGateway
 component "Motor de Optimizacion" as OptimizationEngine
 database "Base de Datos" as Database
 component "Dispositivos IoT" as IoT <<external>>
@@ -29,12 +31,16 @@ component "Servicio de Almacenamiento de Archivos" as Storage <<external>>
 component "Herramientas BI externas" as BI <<external>>
 
 Frontend --> Backend : HTTPS
+Frontend <--> RealtimeGateway : Socket.IO + JWT
 IoT --> TelemetryAPI : telemetry
 
 TelemetryAPI ..> MonitoringEngine
 MonitoringEngine ..> AlertEngine
+MonitoringEngine ..> RealtimeGateway : machine.status.changed
+AlertEngine ..> RealtimeGateway : alert.created / alert.resolved
 AlertsAPI ..> AlertEngine
 ReportsAPI ..> ReportsEngine
+WorkdayScheduler ..> ReportsEngine : generate daily reports
 CostsAPI ..> OptimizationEngine
 
 AuthAPI ..> Database

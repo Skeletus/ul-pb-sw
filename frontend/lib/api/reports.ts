@@ -9,3 +9,7 @@ export function getDailyReport(query: DailyReportQuery) {
 
   return apiRequest<DailyReport>(`/reports/daily?${params.toString()}`);
 }
+
+export function getGeneratedDailyReports() {
+  return apiRequest<DailyReport[]>("/reports/daily/generated");
+}

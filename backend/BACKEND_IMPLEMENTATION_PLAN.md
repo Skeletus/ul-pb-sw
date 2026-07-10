@@ -25,7 +25,6 @@ No se implementaran funcionalidades de Sprint 2, Sprint 3 o Sprint 4.
 - Incidencias operativas.
 - Notificaciones reales por correo u otros canales.
 - Exportacion PDF.
-- WebSockets.
 - Auditoria.
 - Mantenimiento documental.
 - Reporte final de optimizacion.
@@ -74,6 +73,8 @@ No se implementaran funcionalidades de Sprint 2, Sprint 3 o Sprint 4.
 - GET /alerts
 - GET /alerts/:id
 - GET /reports/daily?machineId=&date=
+- GET /reports/daily/generated
+- Socket.IO `/realtime`: `machine.status.changed`, `alert.created`, `alert.resolved`
 
 ## 7. Modulos NestJS a crear
 
@@ -84,6 +85,8 @@ No se implementaran funcionalidades de Sprint 2, Sprint 3 o Sprint 4.
 - AlertsModule.
 - ReportsModule.
 - TelemetrySimulator.
+- RealtimeModule.
+- ScheduleModule para alertas y reportes automaticos.
 - PrismaModule.
 - CommonModule implicito mediante filtros, guards, interceptors y utils.
 
@@ -115,5 +118,7 @@ No se implementaran funcionalidades de Sprint 2, Sprint 3 o Sprint 4.
 - El ERD ubica hourly_rate en rental_contracts, pero Sprint 1 excluye contratos completos. Para HU06 se agregara hourly_rate a machines como tarifa configurada minima del MVP.
 - Se implementara Session porque existe en los diagramas y permite logout basico sin Redis ni blacklist externa. Logout marcara expiration_date con la fecha actual para la sesion asociada al token.
 - Los umbrales operativos seran constantes configurables por variables de entorno: vibration threshold, energy threshold, inactivity threshold de 5 minutos y alert threshold de 30 minutos.
+- La jornada diaria se configura globalmente con `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`; el valor predeterminado es 08:00-17:00 en `America/Lima`.
+- Las lecturas fuera de orden se rechazan para mantener transiciones deterministas. Cada alerta se vincula de forma unica al intervalo continuo de inactividad que la origino.
 - No se agregara Redis porque no se usara cache, sesiones distribuidas ni blacklist de tokens en el MVP.
 - Swagger se expondra en /api/docs y la API usara prefijo global /api.

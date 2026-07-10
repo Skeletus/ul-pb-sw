@@ -8,12 +8,16 @@ control "Monitoring Service" as MonitoringService
 entity "Sensor IoT" as Sensor
 database "Database" as DB
 control "Dashboard" as Dashboard
+control "Authenticated Realtime Gateway" as RealtimeGateway
 
 Supervisor -> Frontend : open dashboard
-Frontend -> API : GET /dashboard
+Frontend -> API : GET /machines and GET /alerts/active
 API -> DB : query machines and indicators
 DB --> API : current data
 API --> Frontend : initial dashboard
+Frontend -> RealtimeGateway : connect(auth.token)
+RealtimeGateway -> DB : validate JWT session and active user
+DB --> RealtimeGateway : valid session
 
 Sensor -> API : sendReading(vibration, consumption)
 activate API
@@ -27,7 +31,10 @@ else operational reading
   MonitoringService -> DB : register active machine_state_records
 end
 MonitoringService -> Dashboard : updateIndicators()
-Dashboard --> Frontend : real-time event
+Dashboard -> RealtimeGateway : machine.status.changed
+RealtimeGateway --> Frontend : typed persisted transition
+Frontend -> API : refetch current machine state
+API --> Frontend : authoritative current state
 Frontend --> Supervisor : shows updated status
 MonitoringService --> API : processed reading
 deactivate MonitoringService

@@ -101,6 +101,7 @@ entity alerts {
     *id: INT <<PK>>
     --
     *machine_id: INT <<FK>>
+    state_record_id: INT <<FK, UNIQUE>>
     *alert_configuration_id: INT <<FK>>
     *priority: VARCHAR(30)
     *status: VARCHAR(30)
@@ -130,6 +131,11 @@ entity reports {
     *type: VARCHAR(60)
     *start_date: DATE
     *end_date: DATE
+    *generated_at: DATETIME
+    *active_hours: DECIMAL(10,2)
+    *inactive_hours: DECIMAL(10,2)
+    *total_classified_hours: DECIMAL(10,2)
+    effective_usage_percentage: DECIMAL(5,2)
     file_url: VARCHAR(255)
 }
 entity inactivity_costs {
@@ -185,6 +191,7 @@ sensors ||--o{ sensor_readings
 machines ||--o{ machine_state_records
 alert_configurations ||--o{ alerts
 machines ||--o{ alerts
+machine_state_records ||--o| alerts
 alerts ||--o| incidents
 alerts ||--o{ notifications
 sites ||--o{ reports

@@ -7,6 +7,10 @@ abstract class Report {
   - machineId : Long
   - startDate : Date
   - endDate : Date
+  - activeHours : Decimal
+  - inactiveHours : Decimal
+  - totalClassifiedHours : Decimal
+  - effectiveUsagePercentage : Decimal
   + generate() : void
   + export() : String
 }

@@ -13,9 +13,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { DataTable } from "@/components/ui/DataTable";
 import { useMachines } from "@/features/machinery/queries";
-import { useDailyReportMutation } from "@/features/reports/queries";
+import { useDailyReportMutation, useGeneratedDailyReports } from "@/features/reports/queries";
 import { getErrorMessage } from "@/lib/api/errors";
+import { formatDate, formatMoney, formatPercent } from "@/lib/utils";
 
 const reportSchema = z.object({
   machineId: z.coerce.number().int("Selecciona una maquinaria valida.").positive("Selecciona una maquinaria."),
@@ -33,6 +35,7 @@ function ReportsContent() {
   const machineIdFromUrl = Number(searchParams.get("machineId"));
   const machinesQuery = useMachines();
   const reportMutation = useDailyReportMutation();
+  const generatedReportsQuery = useGeneratedDailyReports();
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
     defaultValues: {
@@ -121,6 +124,62 @@ function ReportsContent() {
       ) : null}
 
       {reportMutation.data ? <DailyReportSummary report={reportMutation.data} /> : null}
+
+      <section className="grid gap-4">
+        <h2 className="text-xl font-black text-workmeter-ink">Reportes generados</h2>
+        {generatedReportsQuery.isLoading ? <LoadingState label="Cargando reportes generados..." /> : null}
+        {generatedReportsQuery.isError ? (
+          <ErrorState
+            title="No se pudieron cargar los reportes generados"
+            message={getErrorMessage(generatedReportsQuery.error)}
+          />
+        ) : null}
+        {generatedReportsQuery.data?.length === 0 ? (
+          <EmptyState
+            title="No hay reportes diarios generados."
+            message="Los reportes apareceran aqui al cierre de jornada o luego de una consulta manual."
+          />
+        ) : null}
+        {generatedReportsQuery.data && generatedReportsQuery.data.length > 0 ? (
+          <DataTable>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  {[
+                    "Maquina", "Obra", "Fecha", "Activas", "Inactivas", "Uso efectivo", "Tarifa", "Costo inactividad"
+                  ].map((heading) => (
+                    <th key={heading} className="px-4 py-3 text-left text-xs font-black uppercase text-workmeter-steel">
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {generatedReportsQuery.data.map((report) => (
+                  <tr key={report.reportId}>
+                    <td className="px-4 py-4 text-sm font-black text-workmeter-ink">{report.machineCode}</td>
+                    <td className="px-4 py-4 text-sm text-workmeter-steel">{report.siteName}</td>
+                    <td className="whitespace-nowrap px-4 py-4 text-sm text-workmeter-steel">{formatDate(report.date)}</td>
+                    {report.hasData ? (
+                      <>
+                        <td className="px-4 py-4 text-sm text-workmeter-steel">{report.activeHours} h</td>
+                        <td className="px-4 py-4 text-sm text-workmeter-steel">{report.inactiveHours} h</td>
+                        <td className="px-4 py-4 text-sm font-bold text-workmeter-ink">{formatPercent(report.effectiveUsagePercentage ?? 0)}</td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm text-workmeter-steel">{formatMoney(report.hourlyRate)} / h</td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm font-bold text-red-700">{formatMoney(report.inactivityCost)}</td>
+                      </>
+                    ) : (
+                      <td colSpan={5} className="px-4 py-4 text-sm font-bold text-workmeter-steel">
+                        Sin datos activos o inactivos clasificados
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTable>
+        ) : null}
+      </section>
     </div>
   );
 }

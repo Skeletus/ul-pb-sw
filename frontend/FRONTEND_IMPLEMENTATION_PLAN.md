@@ -10,6 +10,8 @@ La aplicacion autenticada de WorkMeter cubrira exclusivamente el Sprint 1 soport
 - Consulta de telemetria reciente por maquinaria.
 - Reporte diario de uso efectivo y costo por inactividad.
 - Visualizacion de alertas activas e historial de alertas.
+- Sincronizacion de estados y alertas mediante eventos autenticados de `/realtime`.
+- Consulta de reportes diarios generados automaticamente.
 
 No se implementaran funciones que no tengan endpoint documentado en `API_CONTRACT.md`.
 
@@ -47,6 +49,7 @@ No se implementaran funciones que no tengan endpoint documentado en `API_CONTRAC
 - `/reports`
   - `GET /api/machines`
   - `GET /api/reports/daily?machineId=<id>&date=<YYYY-MM-DD>`
+  - `GET /api/reports/daily/generated`
 - `/alerts`
   - `GET /api/alerts/active`
   - `GET /api/alerts`
@@ -88,7 +91,6 @@ Bloqueado por falta de endpoint en API_CONTRACT.md:
 - Recuperacion y reseteo de contrasena.
 - Gestion de usuarios, roles y permisos.
 - Dashboard backend dedicado o endpoint `/dashboard`.
-- WebSockets, polling backend dedicado o eventos realtime.
 - Simulacion de telemetria desde la UI como flujo principal (`POST /api/telemetry` existe, pero no se requiere pantalla de simulacion en Sprint 1 solicitado).
 - Edicion o baja de maquinaria.
 - Registro y gestion de incidencias.
@@ -159,6 +161,7 @@ frontend/
 - Guardar `accessToken` y usuario base del login en `localStorage`.
 - En el arranque de rutas protegidas, si hay token, llamar `GET /api/auth/me` para validar sesion.
 - Cada request protegida enviara `Authorization: Bearer <token>`.
+- El cliente Socket.IO enviara el token en `auth.token`, reintentara la conexion y, en cada reconexion, invalidara consultas de maquinaria y alertas para recuperar el estado REST vigente.
 - Si cualquier request devuelve `401`, limpiar sesion y redirigir a `/login`.
 - `logout` llamara `POST /api/auth/logout` si hay token; despues limpiara estado local.
 

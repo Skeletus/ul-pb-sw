@@ -9,7 +9,7 @@ export function AlertBadge({ status }: { status: AlertStatus }) {
 
   return (
     <span className={cn("inline-flex min-h-7 items-center rounded px-2.5 py-1 text-xs font-black", classes[status])}>
-      {status}
+      {status === AlertStatus.ACTIVE ? "Activa" : "Resuelta"}
     </span>
   );
 }

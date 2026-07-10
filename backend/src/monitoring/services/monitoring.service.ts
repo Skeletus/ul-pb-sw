@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MachineStatus, SensorReading } from '@prisma/client';
 import { AlertsService } from '../../alerts/services/alerts.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { UsageClassifier } from './usage-classifier.service';
 
 @Injectable()
@@ -10,19 +11,17 @@ export class MonitoringService {
     private readonly prisma: PrismaService,
     private readonly usageClassifier: UsageClassifier,
     private readonly alertsService: AlertsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async processReading(machineId: number, reading: SensorReading) {
     const machine = await this.prisma.machine.findUniqueOrThrow({
       where: { id: machineId },
     });
-
     const recentReadings = await this.prisma.sensorReading.findMany({
       where: { machineId },
-      orderBy: { timestamp: 'asc' },
-      take: 200,
+      orderBy: { timestamp: 'desc' },
     });
-
     const classification = this.usageClassifier.classify(
       recentReadings.map((item) => ({
         timestamp: item.timestamp,
@@ -32,72 +31,88 @@ export class MonitoringService {
       machine.currentStatus,
     );
 
-    if (
-      classification.status === MachineStatus.ACTIVE ||
-      (classification.status === MachineStatus.INACTIVE && classification.inactiveSince)
-    ) {
-      await this.updateMachineState(
-        machineId,
-        classification.status,
-        classification.status === MachineStatus.INACTIVE && classification.inactiveSince
-          ? classification.inactiveSince
-          : reading.timestamp,
-      );
-    }
+    const result = await this.prisma.$transaction(async (transaction) => {
+      const openState = await transaction.machineStateRecord.findFirst({
+        where: { machineId, endDate: null },
+        orderBy: { startDate: 'desc' },
+      });
+      const classifiable =
+        classification.status === MachineStatus.ACTIVE ||
+        classification.status === MachineStatus.INACTIVE;
+      let currentState = openState;
+      let stateChanged = false;
 
-    if (classification.status === MachineStatus.ACTIVE) {
-      await this.alertsService.resolveActiveForMachine(machineId, reading.timestamp);
-    }
+      if (classifiable && openState?.status !== classification.status) {
+        const effectiveAt = classification.transitionAt ?? reading.timestamp;
+        if (openState) {
+          await transaction.machineStateRecord.update({
+            where: { id: openState.id },
+            data: { endDate: effectiveAt },
+          });
+        }
+        currentState = await transaction.machineStateRecord.create({
+          data: { machineId, status: classification.status, startDate: effectiveAt },
+        });
+        stateChanged = true;
+      }
 
-    if (classification.status === MachineStatus.INACTIVE && classification.inactiveSince) {
-      await this.alertsService.evaluateInactivity(machineId, classification.inactiveSince, reading.timestamp);
-    }
+      if (classifiable) {
+        await transaction.machine.update({
+          where: { id: machineId },
+          data: { currentStatus: classification.status },
+        });
+      }
 
-    return this.prisma.machine.findUnique({
-      where: { id: machineId },
-      include: {
-        machineStateRecords: {
-          orderBy: { startDate: 'desc' },
-          take: 1,
-        },
-      },
-    });
-  }
+      const resolvedAlerts =
+        classification.status === MachineStatus.ACTIVE
+          ? await this.alertsService.resolveActiveForMachine(
+              machineId,
+              classification.transitionAt ?? reading.timestamp,
+              transaction,
+            )
+          : [];
+      const alertEvaluation =
+        classification.status === MachineStatus.INACTIVE && currentState
+          ? await this.alertsService.evaluateInactivity(
+              machineId,
+              currentState.id,
+              currentState.startDate,
+              reading.timestamp,
+              transaction,
+            )
+          : { alert: null, created: false };
 
-  private async updateMachineState(machineId: number, status: MachineStatus, startDate: Date) {
-    const openState = await this.prisma.machineStateRecord.findFirst({
-      where: { machineId, endDate: null },
-      orderBy: { startDate: 'desc' },
-    });
-
-    if (openState?.status === status) {
-      await this.prisma.machine.update({
+      const updatedMachine = await transaction.machine.findUniqueOrThrow({
         where: { id: machineId },
-        data: { currentStatus: status },
+        include: {
+          site: true,
+          machineStateRecords: {
+            orderBy: { startDate: 'desc' },
+            take: 1,
+          },
+        },
       });
-      return openState;
-    }
 
-    if (openState) {
-      await this.prisma.machineStateRecord.update({
-        where: { id: openState.id },
-        data: { endDate: startDate },
-      });
-    }
+      return { updatedMachine, currentState, stateChanged, resolvedAlerts, alertEvaluation };
+    });
 
-    const newState = await this.prisma.machineStateRecord.create({
-      data: {
+    if (result.stateChanged && result.currentState) {
+      this.realtimeGateway.emitMachineStatusChanged({
         machineId,
-        status,
-        startDate,
-      },
-    });
+        machineCode: result.updatedMachine.code,
+        siteId: result.updatedMachine.siteId,
+        status: result.currentState.status,
+        effectiveAt: result.currentState.startDate.toISOString(),
+        stateRecordId: result.currentState.id,
+      });
+    }
+    for (const alert of result.resolvedAlerts) {
+      this.alertsService.publishResolved(alert);
+    }
+    if (result.alertEvaluation.created && result.alertEvaluation.alert) {
+      this.alertsService.publishCreated(result.alertEvaluation.alert, reading.timestamp);
+    }
 
-    await this.prisma.machine.update({
-      where: { id: machineId },
-      data: { currentStatus: status },
-    });
-
-    return newState;
+    return result.updatedMachine;
   }
 }

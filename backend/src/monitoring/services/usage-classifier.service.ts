@@ -12,6 +12,7 @@ export type ClassifierReading = {
 export type ClassificationResult = {
   status: MachineStatus;
   inactiveSince: Date | null;
+  transitionAt: Date | null;
 };
 
 @Injectable()
@@ -28,21 +29,25 @@ export class UsageClassifier {
 
   isOperational(reading: ClassifierReading): boolean {
     return (
-      reading.vibration >= this.vibrationThreshold &&
+      reading.vibration >= this.vibrationThreshold ||
       reading.energyConsumption >= this.consumptionThreshold
     );
   }
 
   classify(readings: ClassifierReading[], currentStatus: MachineStatus): ClassificationResult {
     if (readings.length === 0) {
-      return { status: currentStatus, inactiveSince: null };
+      return { status: currentStatus, inactiveSince: null, transitionAt: null };
     }
 
     const ordered = [...readings].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
     const latest = ordered[ordered.length - 1];
 
     if (this.isOperational(latest)) {
-      return { status: MachineStatus.ACTIVE, inactiveSince: null };
+      return {
+        status: MachineStatus.ACTIVE,
+        inactiveSince: null,
+        transitionAt: currentStatus === MachineStatus.ACTIVE ? null : latest.timestamp,
+      };
     }
 
     const lastOperationalIndex = ordered.map((reading) => this.isOperational(reading)).lastIndexOf(true);
@@ -51,9 +56,16 @@ export class UsageClassifier {
     const inactiveMinutes = minutesBetween(inactiveSince, latest.timestamp);
 
     if (inactiveMinutes > this.inactivityMinutes) {
-      return { status: MachineStatus.INACTIVE, inactiveSince };
+      return {
+        status: MachineStatus.INACTIVE,
+        inactiveSince,
+        transitionAt:
+          currentStatus === MachineStatus.INACTIVE
+            ? null
+            : new Date(inactiveSince.getTime() + this.inactivityMinutes * 60000),
+      };
     }
 
-    return { status: currentStatus, inactiveSince };
+    return { status: currentStatus, inactiveSince, transitionAt: null };
   }
 }

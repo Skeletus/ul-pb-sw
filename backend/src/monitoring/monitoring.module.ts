@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { AlertsModule } from '../alerts/alerts.module';
 import { MonitoringService } from './services/monitoring.service';
 import { UsageClassifier } from './services/usage-classifier.service';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
-  imports: [AlertsModule],
+  imports: [AlertsModule, RealtimeModule],
   providers: [MonitoringService, UsageClassifier],
   exports: [MonitoringService, UsageClassifier],
 })

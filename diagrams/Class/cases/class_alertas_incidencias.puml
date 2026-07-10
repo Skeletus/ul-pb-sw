@@ -12,6 +12,8 @@ class Alert {
   - priority : String
   - status : String
   - generationDate : DateTime
+  - resolvedDate : DateTime
+  - stateRecordId : Long
   + markUnderReview() : void
   + close() : void
 }
@@ -41,6 +43,7 @@ class InactivityBasedPrioritizer implements IncidentPrioritizer {
 }
 
 AlertConfiguration "1" --> "0..*" Alert : defines
+Alert "0..1" --> "1" MachineStateRecord : causedBy
 Alert "1" --> "0..1" Incident : opens
 Alert "1" --> "0..*" Notification : sends
 Incident ..> IncidentPrioritizer : uses

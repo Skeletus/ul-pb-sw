@@ -16,7 +16,7 @@ Authorization: Bearer <token>
 
 - **Roles:** no hay RBAC ni roles implementados. Los endpoints protegidos solo validan JWT, sesion existente/no expirada y usuario con `status === "ACTIVE"`.
 - **Fechas/horas:** los `Date` de Nest/Prisma se serializan como strings ISO 8601, normalmente UTC con sufijo `Z`, por ejemplo `2026-07-08T08:00:00.000Z`.
-- **Reportes diarios:** el backend interpreta `date` como dia UTC, desde `YYYY-MM-DDT00:00:00.000Z` hasta `YYYY-MM-DDT23:59:59.999Z`.
+- **Reportes diarios:** `date` identifica la fecha local de inicio de jornada. La ventana se obtiene de `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`; los valores predeterminados son `08:00`, `17:00` y `America/Lima`.
 - **Decimales Prisma:** los campos `Decimal` persistidos por Prisma se devuelven como strings en JSON, por ejemplo `"120"` o `"12.4000"`. Los calculos de reportes se devuelven como numbers.
 
 ### Formato estandar de error real
@@ -485,6 +485,7 @@ Campos TypeScript:
 - `400`: validacion fallida del DTO o campos extra no permitidos.
 - `401`: token ausente, invalido, expirado, sesion invalida/expirada o usuario inactivo.
 - `404`: `machineId` no existe (`"Machine not found"`).
+- `400`: el `timestamp` no es posterior a la ultima lectura aceptada para la maquina. Las lecturas fuera de orden y timestamps duplicados se rechazan para conservar una linea temporal determinista.
 
 ### GET /api/telemetry/machine/:machineId
 
@@ -536,7 +537,7 @@ SensorReading[]
 
 ### GET /api/reports/daily
 
-**Descripcion:** Genera o actualiza un reporte diario de horas activas/inactivas y costo de inactividad para una maquina.
+**Descripcion:** Genera o actualiza idempotentemente un reporte para la jornada local configurada de una maquina. Los estados distintos de `ACTIVE` e `INACTIVE` no se contabilizan.
 
 **Requiere autenticacion:** Si, JWT Bearer. Sin roles.
 
@@ -562,12 +563,18 @@ GET /api/reports/daily?machineId=1&date=2026-07-08
   "machineId": 1,
   "machineCode": "MACH-001",
   "siteId": 1,
+  "siteName": "Obra Residencial Los Olivos",
   "date": "2026-07-08",
+  "periodStart": "2026-07-08T13:00:00.000Z",
+  "periodEnd": "2026-07-08T22:00:00.000Z",
+  "generatedAt": "2026-07-08T22:00:00.000Z",
   "activeHours": 2,
   "inactiveHours": 0.75,
+  "totalClassifiedHours": 2.75,
   "effectiveUsagePercentage": 72.73,
   "hourlyRate": 120,
-  "inactivityCost": 90
+  "inactivityCost": 90,
+  "hasData": true
 }
 ```
 
@@ -582,6 +589,26 @@ DailyReport
 - `400`: `machineId` o `date` no cumplen `DailyReportQueryDto`, o hay query params extra.
 - `401`: token ausente, invalido, expirado, sesion invalida/expirada o usuario inactivo.
 - `404`: la maquinaria no existe (`"Machine not found"`).
+
+Si no hay intervalos `ACTIVE` o `INACTIVE`, `activeHours`, `inactiveHours` y `totalClassifiedHours` son `0`, `effectiveUsagePercentage` es `null` y `hasData` es `false`.
+
+### GET /api/reports/daily/generated
+
+**Descripcion:** Lista reportes diarios persistidos, incluidos los creados automaticamente al cierre de jornada y los generados por consulta manual.
+
+**Requiere autenticacion:** Si, JWT Bearer. Sin roles.
+
+**Query params opcionales:**
+
+- `machineId`: entero positivo.
+- `date`: fecha exacta `YYYY-MM-DD` interpretada con la configuracion de jornada.
+
+**Response exitosa (200):** `DailyReport[]`, ordenado por inicio de jornada descendente y maquina ascendente.
+
+**Posibles errores:**
+
+- `400`: filtros invalidos o query params extra.
+- `401`: token ausente, invalido, expirado, sesion invalida/expirada o usuario inactivo.
 
 ## Alerts
 
@@ -614,8 +641,12 @@ DailyReport
       "code": "MACH-001",
       "type": "Excavadora",
       "currentStatus": "INACTIVE",
-      "hourlyRate": "120"
-    }
+      "hourlyRate": "120",
+      "site": { "id": 1, "name": "Obra Residencial Los Olivos", "location": "Lima" }
+    },
+    "stateRecordId": 7,
+    "inactiveSince": "2026-07-08T10:05:00.000Z",
+    "inactiveDurationMinutes": 40
   }
 ]
 ```
@@ -737,7 +768,58 @@ AlertWithMachine
 - `401`: token ausente, invalido, expirado, sesion invalida/expirada o usuario inactivo.
 - `404`: la alerta no existe (`"Alert not found"`).
 
-## 3. Modelos de datos compartidos
+## 3. Tiempo real
+
+### Conexion
+
+- **Transporte:** Socket.IO sobre WebSocket con fallback a long-polling.
+- **Namespace:** `/realtime` sobre el origen del backend, por ejemplo `http://localhost:3001/realtime`.
+- **Autenticacion obligatoria:** enviar el mismo JWT de la API REST en `auth.token` durante el handshake. Tambien se acepta `Authorization: Bearer <token>` en clientes que controlen headers.
+- El gateway valida firma, expiracion, sesion persistida y usuario `ACTIVE`. Una conexion no autenticada se desconecta y no recibe datos operacionales.
+- La perdida de conexion no invalida la aplicacion. Socket.IO reintenta automaticamente. En cada conexion inicial o reconexion el frontend invalida y vuelve a consultar maquinaria y alertas mediante REST.
+
+### machine.status.changed
+
+Publicado una vez que la transicion de estado actual e historial fue confirmada en base de datos.
+
+```ts
+interface MachineStatusChangedEvent {
+  machineId: number;
+  machineCode: string;
+  siteId: number;
+  status: MachineStatus;
+  effectiveAt: string;
+  stateRecordId: number;
+}
+```
+
+### alert.created
+
+Publicado cuando se persiste una alerta activa de prioridad alta para un periodo continuo de inactividad.
+
+### alert.resolved
+
+Publicado cuando una lectura operativa resuelve una alerta activa y persiste `resolvedDate`.
+
+Ambos eventos de alerta usan:
+
+```ts
+interface AlertRealtimeEvent {
+  alertId: number;
+  machineId: number;
+  machineCode: string;
+  siteId: number;
+  siteName: string;
+  priority: string;
+  status: AlertStatus;
+  generationDate: string;
+  resolvedDate: string | null;
+  inactiveSince: string;
+  inactiveDurationMinutes: number;
+}
+```
+
+## 4. Modelos de datos compartidos
 
 ```ts
 export enum MachineStatus {
@@ -834,7 +916,10 @@ export interface Alert {
 }
 
 export interface AlertWithMachine extends Alert {
-  machine: Machine;
+  stateRecordId: number | null;
+  inactiveSince: string;
+  inactiveDurationMinutes: number;
+  machine: Machine & { site: Site };
 }
 
 export interface DailyReport {
@@ -842,12 +927,18 @@ export interface DailyReport {
   machineId: number;
   machineCode: string;
   siteId: number;
+  siteName: string;
   date: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
   activeHours: number;
   inactiveHours: number;
-  effectiveUsagePercentage: number;
+  totalClassifiedHours: number;
+  effectiveUsagePercentage: number | null;
   hourlyRate: number;
   inactivityCost: number;
+  hasData: boolean;
 }
 
 export interface ApiError {
@@ -857,7 +948,7 @@ export interface ApiError {
 }
 ```
 
-## 4. Flujos de uso tipicos
+## 5. Flujos de uso tipicos
 
 ### Login
 
@@ -889,7 +980,9 @@ export interface ApiError {
 2. Llamar `GET /api/reports/daily?machineId=<id>&date=<YYYY-MM-DD>`.
 3. Mostrar `activeHours`, `inactiveHours`, `effectiveUsagePercentage`, `hourlyRate` e `inactivityCost`.
 4. El endpoint hace `upsert` del reporte diario y del costo de inactividad; repetir la llamada para el mismo dia actualiza/reusa el registro.
-5. No hay descarga PDF ni URL de archivo implementada para este flujo.
+5. El scheduler evalua cada minuto el cierre local configurado y genera el reporte de todas las maquinas. Los errores se registran por maquina sin detener el servidor.
+6. `GET /api/reports/daily/generated` recupera los reportes ya persistidos para `/reports`.
+7. No hay descarga PDF ni URL de archivo implementada para este flujo.
 
 ### Ver alertas
 
@@ -899,15 +992,15 @@ export interface ApiError {
 4. Para detalle, llamar `GET /api/alerts/:id`.
 5. Las alertas se generan indirectamente al procesar telemetria inactiva por mas de `ALERT_THRESHOLD_MINUTES` (default `30`); se resuelven automaticamente cuando una lectura vuelve a clasificar la maquina como `ACTIVE`.
 
-## 5. Notas/Desviaciones
+## 6. Notas/Desviaciones
 
 - `ContextMD.md` y los diagramas proponen usuarios/roles/permisos, pero el backend real no implementa endpoints de usuarios, roles ni RBAC. Solo valida JWT y estado activo del usuario.
 - Los diagramas muestran registro conjunto de maquinaria, contrato y sensor. El backend real solo registra `Machine` con `hourlyRate` embebido; no existen modelos/endpoints de contratos ni sensores.
 - `ContextMD.md` sugiere rutas `/api/machinery`; el backend real usa `/api/machines`.
 - `ContextMD.md` sugiere `POST /api/telemetry/simulate` y `GET /api/telemetry?machineId=&from=&to=`; el backend real solo tiene `POST /api/telemetry` y `GET /api/telemetry/machine/:machineId`.
-- El diagrama de monitoreo incluye `GET /dashboard`/servicio realtime; el backend real no tiene endpoints de dashboard, WebSockets ni eventos push.
+- El diagrama de monitoreo incluye `GET /dashboard`; no existe ese endpoint dedicado, pero el servicio realtime esta implementado mediante el gateway `/realtime` y la carga inicial usa endpoints REST existentes.
 - Los diagramas de alertas incluyen incidentes y notificaciones; el backend real solo lista alertas y las crea/resuelve internamente al procesar telemetria. No existe endpoint para crear incidentes ni cambiar estado de alerta manualmente.
 - El diagrama de reportes muestra `POST /reports`, PDF y storage con URL de descarga. El backend real implementa `GET /api/reports/daily` y devuelve metricas JSON, sin PDF ni `fileUrl` en la respuesta.
-- `ContextMD.md` sugeria que una maquina esta activa si `vibration >= 0.5` **o** `energyConsumption >= 5`. El codigo real usa condicion **AND**: ambas deben estar sobre umbral para clasificar como `ACTIVE`.
+- La clasificacion implementa la regla sugerida: una lectura es operativa si `vibration >= VIBRATION_THRESHOLD` **o** `energyConsumption >= ENERGY_THRESHOLD`; solo permanece bajo umbral si ambos valores son inferiores.
 - Existe `HttpExceptionFilter` con `{ statusCode, path, error, timestamp }`, pero no esta registrado; el formato real de error es el estandar de NestJS.
 - Swagger declara `ApiOkResponse` para `POST /api/auth/login` y `POST /api/auth/logout`, pero al no usar `@HttpCode(200)`, Nest responde `201` en ejecucion real.

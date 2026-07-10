@@ -2,12 +2,12 @@ import { MachineStatus } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 const statusLabels: Record<MachineStatus, string> = {
-  [MachineStatus.REGISTERED]: "REGISTERED",
-  [MachineStatus.ACTIVE]: "ACTIVE",
-  [MachineStatus.INACTIVE]: "INACTIVE",
-  [MachineStatus.POWERED_ON_NO_PRODUCTIVE_USE]: "POWERED_ON_NO_PRODUCTIVE_USE",
-  [MachineStatus.UNDER_DOCUMENTED_MAINTENANCE]: "UNDER_DOCUMENTED_MAINTENANCE",
-  [MachineStatus.DECOMMISSIONED]: "DECOMMISSIONED"
+  [MachineStatus.REGISTERED]: "Registrada",
+  [MachineStatus.ACTIVE]: "Activo",
+  [MachineStatus.INACTIVE]: "Inactivo",
+  [MachineStatus.POWERED_ON_NO_PRODUCTIVE_USE]: "Encendida sin uso productivo",
+  [MachineStatus.UNDER_DOCUMENTED_MAINTENANCE]: "En mantenimiento",
+  [MachineStatus.DECOMMISSIONED]: "Dada de baja"
 };
 
 const statusClasses: Record<MachineStatus, string> = {
@@ -19,6 +19,10 @@ const statusClasses: Record<MachineStatus, string> = {
   [MachineStatus.DECOMMISSIONED]: "bg-slate-200 text-slate-700"
 };
 
+export function getMachineStatusLabel(status: MachineStatus) {
+  return statusLabels[status];
+}
+
 export function MachineStatusBadge({ status }: { status: MachineStatus }) {
   return (
     <span
@@ -27,7 +31,7 @@ export function MachineStatusBadge({ status }: { status: MachineStatus }) {
         statusClasses[status]
       )}
     >
-      {statusLabels[status]}
+      {getMachineStatusLabel(status)}
     </span>
   );
 }

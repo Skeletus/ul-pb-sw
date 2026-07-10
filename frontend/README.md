@@ -59,6 +59,8 @@ El token JWT se envia como:
 Authorization: Bearer <token>
 ```
 
+El mismo token se envia como `auth.token` al namespace Socket.IO `/realtime`. El cliente se reconecta automaticamente, conserva la aplicacion operativa durante cortes y vuelve a consultar maquinaria y alertas al recuperar la conexion.
+
 ## Rutas principales
 
 - `/login`
@@ -77,7 +79,10 @@ Authorization: Bearer <token>
 - Registro de maquinaria.
 - Detalle de maquinaria con estado y telemetria reciente.
 - Reporte diario por maquina y fecha.
+- Listado de reportes generados automaticamente al cierre de jornada.
 - Alertas activas e historial.
+
+Los horarios y la zona de los reportes se configuran en el backend mediante `WORKDAY_START`, `WORKDAY_END` y `WORK_TIMEZONE`.
 
 ## Pantallas no incluidas
 

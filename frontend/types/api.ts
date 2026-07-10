@@ -92,7 +92,10 @@ export interface Alert {
 }
 
 export interface AlertWithMachine extends Alert {
-  machine: Machine;
+  stateRecordId: number | null;
+  inactiveSince: string;
+  inactiveDurationMinutes: number;
+  machine: Machine & { site: Site };
 }
 
 export interface DailyReport {
@@ -100,12 +103,41 @@ export interface DailyReport {
   machineId: number;
   machineCode: string;
   siteId: number;
+  siteName: string;
   date: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
   activeHours: number;
   inactiveHours: number;
-  effectiveUsagePercentage: number;
+  totalClassifiedHours: number;
+  effectiveUsagePercentage: number | null;
   hourlyRate: number;
   inactivityCost: number;
+  hasData: boolean;
+}
+
+export interface MachineStatusChangedEvent {
+  machineId: number;
+  machineCode: string;
+  siteId: number;
+  status: MachineStatus;
+  effectiveAt: string;
+  stateRecordId: number;
+}
+
+export interface AlertRealtimeEvent {
+  alertId: number;
+  machineId: number;
+  machineCode: string;
+  siteId: number;
+  siteName: string;
+  priority: string;
+  status: AlertStatus;
+  generationDate: string;
+  resolvedDate: string | null;
+  inactiveSince: string;
+  inactiveDurationMinutes: number;
 }
 
 export interface ApiError {

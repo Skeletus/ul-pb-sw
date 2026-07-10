@@ -23,17 +23,21 @@ export function AlertsList({ alerts, emptyMessage }: { alerts: AlertWithMachine[
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-base font-black text-workmeter-ink">{alert.machine.code}</h3>
                   <span className="rounded bg-red-50 px-2 py-1 text-xs font-black text-red-700">
-                    {alert.priority}
+                    {alert.priority === "HIGH" ? "Prioridad alta" : alert.priority}
                   </span>
                   <AlertBadge status={alert.status} />
                 </div>
                 <p className="mt-1 text-sm text-workmeter-steel">{alert.machine.type}</p>
+                <p className="mt-1 text-sm font-bold text-workmeter-ink">{alert.machine.site.name}</p>
                 <p className="mt-2 text-sm font-bold text-workmeter-steel">
                   Generada: {formatDateTime(alert.generationDate)}
                 </p>
                 {alert.resolvedDate ? (
                   <p className="mt-1 text-sm text-workmeter-steel">Resuelta: {formatDateTime(alert.resolvedDate)}</p>
                 ) : null}
+                <p className="mt-1 text-sm text-workmeter-steel">
+                  Inactividad: {Math.round(alert.inactiveDurationMinutes)} min
+                </p>
               </div>
             </div>
             <MachineStatusBadge status={alert.machine.currentStatus} />

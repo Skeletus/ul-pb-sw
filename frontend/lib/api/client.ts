@@ -6,13 +6,13 @@ type RequestOptions = RequestInit & {
   authenticated?: boolean;
 };
 
-function getBaseUrl() {
+export function getApiOrigin() {
   const configured = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
   return configured.replace(/\/$/, "");
 }
 
 function buildUrl(path: string) {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getApiOrigin();
   const apiBaseUrl = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
   return `${apiBaseUrl}${path}`;
 }

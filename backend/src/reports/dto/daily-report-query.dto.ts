@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsPositive } from 'class-validator';
+import { IsInt, IsPositive, Matches } from 'class-validator';
 
 export class DailyReportQueryDto {
   @ApiProperty({ example: 1 })
@@ -10,6 +10,6 @@ export class DailyReportQueryDto {
   machineId: number;
 
   @ApiProperty({ example: '2026-07-08' })
-  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
   date: string;
 }
