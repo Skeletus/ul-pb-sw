@@ -11,7 +11,8 @@ describe('AuthService password recovery and logout', () => {
     };
     const mail = { sendPasswordReset: jest.fn().mockResolvedValue(undefined) };
     const config = { get: jest.fn().mockReturnValue(30) };
-    return { prisma, transaction, mail, service: new AuthService(prisma as never, {} as never, config as never, mail as never) };
+    const audit = { record: jest.fn().mockResolvedValue(undefined) };
+    return { prisma, transaction, mail, service: new AuthService(prisma as never, {} as never, config as never, mail as never, audit as never) };
   }
 
   it('creates a hashed single-use token and sends a reset link for a registered email', async () => {
@@ -43,7 +44,7 @@ describe('AuthService password recovery and logout', () => {
 
   it('expires the current session on logout', async () => {
     const { service, prisma } = setup();
-    await service.logout(9);
+    await service.logout(9, 1);
     expect(prisma.session.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 9 }, data: { expirationDate: expect.any(Date) } }));
   });
 });

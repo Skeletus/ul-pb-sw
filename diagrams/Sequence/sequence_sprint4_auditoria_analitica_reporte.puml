@@ -1,0 +1,26 @@
+@startuml
+title Sprint 4 - auditoria, analitica y reporte final
+actor Administrador
+participant "Frontend WorkMeter" as UI
+participant "API NestJS" as API
+database "PostgreSQL" as DB
+participant "PDFKit" as PDF
+
+Administrador -> UI: Selecciona filtros Sprint 4
+UI -> API: GET comparison/trends/incidents
+API -> DB: Lee estados, telemetria, alertas,
+incidencias y mantenimiento
+DB --> API: Datos reales
+API --> UI: Métricas y prioridad calculada
+Administrador -> UI: Genera reporte final
+UI -> API: POST final-optimization
+API -> DB: Consolida e inserta/upsert idempotente
+API -> DB: Registra REPORT_GENERATED
+API --> UI: Reporte y recomendaciones
+UI -> API: GET :id/export
+API -> DB: Lee reporte
+API -> PDF: Genera documento PDF
+PDF --> API: Bytes PDF
+API -> DB: Registra REPORT_EXPORTED
+API --> UI: application/pdf
+@enduml

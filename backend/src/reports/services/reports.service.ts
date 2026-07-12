@@ -13,6 +13,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { DailyReportQueryDto } from '../dto/daily-report-query.dto';
 import { ListDailyReportsQueryDto } from '../dto/list-daily-reports-query.dto';
 import { UsageComparisonQueryDto } from '../dto/usage-comparison-query.dto';
+// pdfkit exposes a CommonJS constructor and has no runtime default export.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import PDFDocument = require('pdfkit');
 
 type StateRecordLike = {

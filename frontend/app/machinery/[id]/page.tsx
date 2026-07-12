@@ -19,6 +19,7 @@ import { getErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/utils";
 import { routes } from "@/lib/routes";
 import { MachineSprint2Panel } from "@/components/machinery/MachineSprint2Panel";
+import { MaintenancePanel } from "@/components/machinery/MaintenancePanel";
 
 export default function MachineDetailPage() {
   const params = useParams<{ id: string }>();
@@ -161,6 +162,7 @@ export default function MachineDetailPage() {
           </section>
         ) : null}
         {validId ? <MachineSprint2Panel machineId={machineId} /> : null}
+        {validId ? <MaintenancePanel machineId={machineId} /> : null}
       </div>
     </AppShell>
   );

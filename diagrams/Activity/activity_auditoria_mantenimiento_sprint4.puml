@@ -1,0 +1,21 @@
+@startuml
+title Sprint 4 - auditoria y mantenimiento documental
+start
+:Usuario autenticado;
+if (Accion critica?) then (si)
+  :Ejecutar operacion de dominio;
+  if (Operacion exitosa?) then (si)
+    :Registrar AuditLog SUCCESS;
+  else (no)
+    :Registrar AuditLog FAILURE;
+  endif
+else (no)
+  :Continuar operacion no auditable;
+endif
+if (Registrar mantenimiento?) then (si)
+  :Validar fecha siguiente posterior;
+  :Guardar MaintenanceRecord;
+  :Auditar MAINTENANCE_CREATED;
+endif
+stop
+@enduml

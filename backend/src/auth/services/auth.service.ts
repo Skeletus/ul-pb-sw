@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditAction, AuditResult } from '@prisma/client';
+import { AuditLogService } from '../../audit/audit-log.service';
 import { LoginDto } from '../dto/login.dto';
 import { JwtPayload } from '../types/jwt-payload.type';
 import { createHash, randomBytes } from 'crypto';
@@ -15,6 +17,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly passwordResetMailService: PasswordResetMailService,
+    private readonly audit: AuditLogService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -23,11 +26,13 @@ export class AuthService {
     });
 
     if (!user || user.status !== 'ACTIVE') {
+      await this.audit.record({ action: AuditAction.LOGIN, resource: 'User', result: AuditResult.FAILURE, metadata: { email: loginDto.email } });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const validPassword = await bcrypt.compare(loginDto.password, user.passwordHash);
     if (!validPassword) {
+      await this.audit.record({ userId: user.id, action: AuditAction.LOGIN, resource: 'User', resourceId: user.id, result: AuditResult.FAILURE });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -51,6 +56,7 @@ export class AuthService {
       data: { token: accessToken },
     });
 
+    await this.audit.record({ userId: user.id, action: AuditAction.LOGIN, resource: 'User', resourceId: user.id });
     return {
       accessToken,
       user: {
@@ -62,11 +68,12 @@ export class AuthService {
     };
   }
 
-  async logout(sessionId: number) {
+  async logout(sessionId: number, userId: number) {
     await this.prisma.session.update({
       where: { id: sessionId },
       data: { expirationDate: new Date() },
     });
+    await this.audit.record({ userId, action: AuditAction.LOGOUT, resource: 'Session', resourceId: sessionId });
     return { message: 'Session closed' };
   }
 
@@ -93,6 +100,7 @@ export class AuthService {
     if (!(await bcrypt.compare(currentPassword, user.passwordHash))) throw new BadRequestException('Current password is incorrect');
     const now = new Date(); const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.prisma.$transaction([this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }), this.prisma.session.updateMany({ where: { userId, id: { not: sessionId }, expirationDate: null }, data: { expirationDate: now } })]);
+    await this.audit.record({ userId, action: AuditAction.PASSWORD_CHANGED, resource: 'User', resourceId: userId });
     return { message: 'Password updated successfully' };
   }
 

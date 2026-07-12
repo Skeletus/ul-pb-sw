@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
+import { AuditAction } from '@prisma/client';
+import { AuditLogService } from '../audit/audit-log.service';
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditLogService) {}
 
   async create(alertId: number, registeredById: number, dto: CreateIncidentDto) {
     const alert = await this.prisma.alert.findUnique({
@@ -12,7 +14,7 @@ export class IncidentsService {
       include: { machine: true },
     });
     if (!alert) throw new NotFoundException('Alert not found');
-    return this.prisma.operationalIncident.create({
+    const incident = await this.prisma.operationalIncident.create({
       data: {
         alertId,
         machineId: alert.machineId,
@@ -22,6 +24,8 @@ export class IncidentsService {
       },
       include: { registeredBy: { select: { id: true, name: true, email: true } } },
     });
+    await this.audit.record({ userId: registeredById, action: AuditAction.INCIDENT_CREATED, resource: 'OperationalIncident', resourceId: incident.id, metadata: { alertId, severity: dto.severity } });
+    return incident;
   }
 
   findByAlert(alertId: number) {

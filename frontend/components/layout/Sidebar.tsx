@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Gauge, ClipboardList, Truck, UserRound, Users } from "lucide-react";
+import { Bell, Gauge, ClipboardList, Truck, UserRound, Users, BarChart3, Wrench, ShieldCheck, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,12 @@ const items = [
   { label: "Historial", href: routes.reportsHistory, icon: ClipboardList },
   { label: "Perfil", href: routes.profile, icon: UserRound },
   { label: "Usuarios", href: routes.users, icon: Users, adminOnly: true }
+  ,{ label: "Comparar", href: routes.comparison, icon: BarChart3 },
+  { label: "Tendencias", href: routes.trends, icon: BarChart3 },
+  { label: "Incidencias", href: routes.incidents, icon: AlertTriangle },
+  { label: "Mantenimiento", href: routes.machinery, icon: Wrench },
+  { label: "Auditoría", href: routes.audit, icon: ShieldCheck, adminOnly: true },
+  { label: "Optimización final", href: routes.finalOptimization, icon: ClipboardList, adminOnly: true }
 ];
 
 export function Sidebar() {

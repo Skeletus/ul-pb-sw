@@ -8,5 +8,10 @@ export const routes = {
   alerts: "/alerts",
   profile: "/profile",
   users: "/users",
-  reportsHistory: "/reports/history"
+  reportsHistory: "/reports/history",
+  audit: "/audit",
+  comparison: "/analytics/comparison",
+  trends: "/analytics/trends",
+  incidents: "/incidents",
+  finalOptimization: "/reports/final-optimization"
 } as const;

@@ -1,13 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { MachineStatus } from '@prisma/client';
+import { AuditAction, MachineStatus } from '@prisma/client';
+import { AuditLogService } from '../../audit/audit-log.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMachineDto } from '../dto/create-machine.dto';
 
 @Injectable()
 export class MachineryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditLogService) {}
 
-  async create(createMachineDto: CreateMachineDto) {
+  async create(createMachineDto: CreateMachineDto, userId?: number) {
     const site = await this.prisma.site.findUnique({ where: { id: createMachineDto.siteId } });
     if (!site) {
       throw new NotFoundException('Site not found');
@@ -20,7 +21,7 @@ export class MachineryService {
       throw new ConflictException('Machine code already exists');
     }
 
-    return this.prisma.machine.create({
+    const machine = await this.prisma.machine.create({
       data: {
         siteId: createMachineDto.siteId,
         code: createMachineDto.code,
@@ -28,6 +29,8 @@ export class MachineryService {
         hourlyRate: createMachineDto.hourlyRate ?? 0,
       },
     });
+    await this.audit.record({ userId, action: AuditAction.CREATE, resource: 'Machine', resourceId: machine.id, metadata: { code: machine.code } });
+    return machine;
   }
 
   findAll(siteId?: number) {
@@ -39,8 +42,8 @@ export class MachineryService {
   }
 
   sites() { return this.prisma.site.findMany({ orderBy: { name: 'asc' } }); }
-  async update(id:number,dto:{code?:string;type?:string;siteId?:number}) { if(dto.code){const duplicate=await this.prisma.machine.findUnique({where:{code:dto.code}});if(duplicate&&duplicate.id!==id)throw new ConflictException('Machine code already exists');} return this.prisma.machine.update({where:{id},data:dto,include:{site:true}}); }
-  async decommission(id:number){return this.prisma.$transaction(async tx=>{const machine=await tx.machine.update({where:{id},data:{currentStatus:MachineStatus.DECOMMISSIONED}});await tx.machineStateRecord.updateMany({where:{machineId:id,endDate:null},data:{endDate:new Date()}});return machine;});}
+  async update(id:number,dto:{code?:string;type?:string;siteId?:number}, userId?: number) { if(dto.code){const duplicate=await this.prisma.machine.findUnique({where:{code:dto.code}});if(duplicate&&duplicate.id!==id)throw new ConflictException('Machine code already exists');} const machine = await this.prisma.machine.update({where:{id},data:dto,include:{site:true}}); await this.audit.record({ userId, action: AuditAction.UPDATE, resource: 'Machine', resourceId: id, metadata: { fields: Object.keys(dto) } }); return machine; }
+  async decommission(id:number, userId?: number){const machine=await this.prisma.$transaction(async tx=>{const item=await tx.machine.update({where:{id},data:{currentStatus:MachineStatus.DECOMMISSIONED}});await tx.machineStateRecord.updateMany({where:{machineId:id,endDate:null},data:{endDate:new Date()}});return item;}); await this.audit.record({ userId, action: AuditAction.DELETE, resource: 'Machine', resourceId: id, metadata: { softDelete: true } }); return machine;}
 
   async findOne(id: number) {
     const machine = await this.prisma.machine.findUnique({

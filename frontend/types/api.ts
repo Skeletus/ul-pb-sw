@@ -131,6 +131,15 @@ export interface EnergyConsumption { machineId: number; sensorId: number; from: 
 export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type IncidentStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 export interface OperationalIncident { id: number; alertId: number; machineId: number; siteId: number; title: string; description: string; severity: IncidentSeverity; status: IncidentStatus; registrationDate: string; registeredBy: Pick<AuthUser, "id" | "name" | "email">; }
+export interface PrioritizedIncident extends OperationalIncident { priorityScore: number; machine?: MachineWithSite; }
+export interface MaintenanceRecord { id:number; machineId:number; maintenanceDate:string; type:string; description:string; status:string; cost:string|number; provider:string|null; nextMaintenanceDate:string|null; registeredBy?:Pick<AuthUser,"id"|"name">; }
+export interface AuditLog { id:number; userId:number|null; action:string; resource:string; resourceId:string|null; occurredAt:string; result:"SUCCESS"|"FAILURE"; metadata:Record<string,unknown>|null; user:{id:number;name:string;email:string}|null; }
+export interface AuditLogPage { items:AuditLog[]; page:number; pageSize:number; total:number; totalPages:number; }
+export interface AnalyticsMachine { machineId:number; machineCode:string; machineType:string; siteId:number; siteName:string; activeHours:number; inactiveHours:number; totalHours:number; effectiveUsagePercentage:number|null; energyConsumption:number; inactivityCost:number; alertCount:number; incidentCount:number; maintenanceCount:number; currentStatus:MachineStatus; hasData:boolean; }
+export interface ComparisonResult { from:string; to:string; timeZone:string; machines:AnalyticsMachine[]; }
+export interface TrendPoint { period:string; activeHours:number; inactiveHours:number; effectiveUsagePercentage:number|null; energyConsumption:number; inactivityCost:number; hasData:boolean; }
+export interface TrendsResult { from:string; to:string; groupBy:"daily"|"weekly"; timeZone:string; data:TrendPoint[]; }
+export interface FinalOptimizationReport { id:number; siteId:number|null; machineIds:number[]; startDate:string; endDate:string; generatedAt:string; summary:Record<string,number>; machineMetrics:Array<Record<string,unknown>>; recommendations:Array<{action:string;justification:string}>; incidentMetrics:Record<string,number>; maintenanceMetrics:Record<string,number>; }
 export interface UsageComparisonMachine { machineId: number; machineCode: string; machineType: string; siteId: number; siteName: string; activeHours: number; inactiveHours: number; totalClassifiedHours: number; effectiveUsagePercentage: number; hourlyRate: number; inactivityCost: number; availableOperatingCost: number; lowUtilization: boolean; }
 export interface UsageComparison { from: string; to: string; timeZone: string; lowUtilizationThreshold: number; machines: UsageComparisonMachine[]; }
 

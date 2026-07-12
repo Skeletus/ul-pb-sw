@@ -13,6 +13,9 @@ import { ContractsModule } from './contracts/contracts.module';
 import { SensorsModule } from './sensors/sensors.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { RolesModule } from './roles/roles.module';
+import { AuditModule } from './audit/audit.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { RolesModule } from './roles/roles.module';
     SensorsModule,
     IncidentsModule,
     RolesModule,
+    AuditModule,
+    MaintenanceModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

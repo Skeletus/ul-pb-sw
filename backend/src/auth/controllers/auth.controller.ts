@@ -32,7 +32,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Session closed' })
   logout(@Req() request: AuthenticatedRequest) {
-    return this.authService.logout(request.user.sessionId);
+    return this.authService.logout(request.user.sessionId, request.user.id);
   }
 
   @Get('me')

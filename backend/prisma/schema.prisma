@@ -49,6 +49,29 @@ enum IncidentSeverity {
   CRITICAL
 }
 
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGED
+  CREATE
+  UPDATE
+  DELETE
+  ROLE_CHANGED
+  SENSOR_ASSOCIATED
+  INCIDENT_CREATED
+  INCIDENT_STATUS_CHANGED
+  MAINTENANCE_CREATED
+  MAINTENANCE_UPDATED
+  MAINTENANCE_DELETED
+  REPORT_GENERATED
+  REPORT_EXPORTED
+}
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   name         String    @db.VarChar(100)
@@ -59,6 +82,9 @@ model User {
   sessions     Session[]
   passwordResetTokens PasswordResetToken[]
   incidents    OperationalIncident[]
+  auditLogs    AuditLog[]
+  maintenanceRecords MaintenanceRecord[]
+  finalReports FinalOptimizationReport[]
   roleId       Int       @map("role_id")
   role         Role      @relation(fields: [roleId], references: [id])
 
@@ -126,6 +152,8 @@ model Site {
   machines Machine[]
   reports  Report[]
   incidents OperationalIncident[]
+  maintenanceRecords MaintenanceRecord[]
+  finalReports FinalOptimizationReport[]
 
   @@map("sites")
 }
@@ -147,6 +175,7 @@ model Machine {
   sensors             Sensor[]
   incidents           OperationalIncident[]
   alertConfiguration  AlertConfiguration?
+  maintenanceRecords  MaintenanceRecord[]
 
   @@index([siteId])
   @@map("machines")
@@ -251,6 +280,8 @@ model OperationalIncident {
   severity         IncidentSeverity
   status           IncidentStatus   @default(OPEN)
   registrationDate DateTime         @default(now()) @map("registration_date")
+  priorityScore    Decimal          @default(0) @map("priority_score") @db.Decimal(8, 2)
+  priorityUpdatedAt DateTime?       @map("priority_updated_at")
   alert             Alert            @relation(fields: [alertId], references: [id])
   machine           Machine          @relation(fields: [machineId], references: [id])
   site              Site             @relation(fields: [siteId], references: [id])
@@ -259,7 +290,72 @@ model OperationalIncident {
   @@index([alertId, registrationDate])
   @@index([machineId, registrationDate])
   @@index([siteId])
+  @@index([status, severity, priorityScore, registrationDate])
   @@map("operational_incidents")
+}
+
+model AuditLog {
+  id           Int         @id @default(autoincrement())
+  userId       Int?        @map("user_id")
+  action       AuditAction
+  resource     String      @db.VarChar(80)
+  resourceId   String?     @map("resource_id") @db.VarChar(80)
+  occurredAt   DateTime    @default(now()) @map("occurred_at")
+  ipAddress    String?     @map("ip_address") @db.VarChar(64)
+  userAgent    String?     @map("user_agent") @db.VarChar(255)
+  result       AuditResult @default(SUCCESS)
+  metadata     Json?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredAt])
+  @@index([action, occurredAt])
+  @@index([resource, occurredAt])
+  @@index([occurredAt])
+  @@map("audit_logs")
+}
+
+model MaintenanceRecord {
+  id                 Int       @id @default(autoincrement())
+  machineId          Int       @map("machine_id")
+  siteId             Int?      @map("site_id")
+  registeredById     Int       @map("registered_by_id")
+  maintenanceDate    DateTime  @map("maintenance_date")
+  type               String    @db.VarChar(80)
+  description        String    @db.VarChar(1200)
+  status             String    @db.VarChar(40)
+  cost               Decimal   @default(0) @db.Decimal(12, 2)
+  provider           String?   @db.VarChar(160)
+  nextMaintenanceDate DateTime? @map("next_maintenance_date")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  machine            Machine   @relation(fields: [machineId], references: [id])
+  site               Site?     @relation(fields: [siteId], references: [id])
+  registeredBy       User      @relation(fields: [registeredById], references: [id])
+
+  @@index([machineId, maintenanceDate])
+  @@index([siteId, maintenanceDate])
+  @@map("maintenance_records")
+}
+
+model FinalOptimizationReport {
+  id                 Int      @id @default(autoincrement())
+  siteId             Int?     @map("site_id")
+  machineIds         Json     @map("machine_ids")
+  startDate          DateTime @map("start_date")
+  endDate            DateTime @map("end_date")
+  generatedById      Int      @map("generated_by_id")
+  generatedAt        DateTime @default(now()) @map("generated_at")
+  summary            Json
+  machineMetrics     Json     @map("machine_metrics")
+  recommendations    Json
+  incidentMetrics    Json     @map("incident_metrics")
+  maintenanceMetrics Json     @map("maintenance_metrics")
+  generatedBy        User     @relation(fields: [generatedById], references: [id])
+  site               Site?    @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, startDate, endDate, generatedById])
+  @@index([siteId, startDate, endDate])
+  @@map("final_optimization_reports")
 }
 
 model Report {

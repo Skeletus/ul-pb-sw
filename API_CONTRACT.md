@@ -1086,3 +1086,40 @@ La formula de ahorro es `projectedSavings = currentInactivityCost * targetReduct
 ### Eventos realtime
 
 El Socket.IO autenticado publica `machine.status.changed`, `alert.created` y `alert.resolved`. Los payloads incluyen identificador de maquina, estado/prioridad, obra y marcas temporales (`effectiveAt`, `generationDate`, `resolvedDate`). El cliente invalida maquinaria, dashboard y alertas al recibirlos y vuelve a consultar al reconectar.
+## Sprint 4 — HU21–HU26
+
+Todos los endpoints de esta sección usan el prefijo `/api` y JWT Bearer. Las rutas de auditoría y reporte final requieren el rol `ADMINISTRATOR`.
+
+### Auditoría (HU21)
+
+- `GET /audit-logs?page=1&pageSize=20&userId=&action=&resource=&from=&to=&result=` — lista paginada `{ items, page, pageSize, total, totalPages }`; solo administradores.
+- `GET /audit-logs/:id` — detalle de evento; solo administradores.
+
+Los eventos almacenan usuario opcional, acción, recurso, identificador, fecha, resultado y metadatos sanitizados. Las claves que contienen `password`, `token`, `secret`, `authorization` o `hash` se eliminan.
+
+### Mantenimiento (HU22)
+
+- `POST /machines/:machineId/maintenance` — registra `{ maintenanceDate, type, description, status, cost, provider?, nextMaintenanceDate? }`.
+- `GET /machines/:machineId/maintenance` — historial ordenado del más reciente al más antiguo.
+- `GET /maintenance/:id` — detalle.
+- `PATCH /maintenance/:id` y `DELETE /maintenance/:id` — edición/baja lógica; administrador.
+
+La próxima fecha debe ser posterior a la fecha de mantenimiento. Las operaciones crean eventos `MAINTENANCE_CREATED`, `MAINTENANCE_UPDATED` o `MAINTENANCE_DELETED`.
+
+### Analítica e incidencias (HU23–HU25)
+
+- `GET /analytics/machines/comparison?machineIds=1,2&from=ISO&to=ISO&siteId=` — requiere al menos dos máquinas y devuelve horas, uso efectivo, consumo, costo, alertas, incidencias, mantenimientos y estado.
+- `GET /analytics/usage-trends?from=ISO&to=ISO&groupBy=daily|weekly&machineId=&siteId=` — devuelve buckets cronológicos con `hasData`; no rellena datos inexistentes.
+- `GET /incidents/prioritized?severity=&status=&machineId=&siteId=` — devuelve incidencias ordenadas por críticas y `priorityScore` descendente.
+- `PATCH /incidents/:id/status` — cambia `OPEN|IN_PROGRESS|RESOLVED` y registra auditoría.
+
+La puntuación combina severidad, estado de máquina, duración de inactividad, alertas y antigüedad. La zona horaria de respuesta es `WORK_TIMEZONE` (por defecto `America/Lima`).
+
+### Reporte final (HU26)
+
+- `POST /reports/final-optimization` — administrador; body `{ from, to, siteId?, machineIds? }`.
+- `GET /reports/final-optimization` — últimos 50 reportes.
+- `GET /reports/final-optimization/:id` — detalle con resumen, métricas, incidencias, mantenimientos y recomendaciones justificadas.
+- `GET /reports/final-optimization/:id/export` — descarga `application/pdf`; registra `REPORT_EXPORTED`.
+
+La generación registra `REPORT_GENERATED` y es idempotente para la misma obra, periodo y usuario. Las recomendaciones posibles son `KEEP_MACHINE`, `REDUCE_RENTAL`, `REVIEW_MACHINE` y `WITHDRAW_MACHINE`.

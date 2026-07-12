@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator'; import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBearerAuth,
@@ -23,8 +24,8 @@ export class MachineryController {
   @Post()
   @ApiCreatedResponse({ type: MachineResponseDto })
   @ApiNotFoundResponse({ description: 'Site not found' })
-  create(@Body() createMachineDto: CreateMachineDto) {
-    return this.machineryService.create(createMachineDto);
+  create(@Body() createMachineDto: CreateMachineDto, @Req() request: Request & { user?: { id: number } }) {
+    return this.machineryService.create(createMachineDto, request.user?.id);
   }
 
   @Get()
@@ -33,8 +34,8 @@ export class MachineryController {
     return this.machineryService.findAll(siteId ? Number(siteId) : undefined);
   }
 
-  @Patch(':id') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') update(@Param('id',ParseIntPipe)id:number,@Body()dto:{code?:string;type?:string;siteId?:number}){return this.machineryService.update(id,dto)}
-  @Patch(':id/decommission') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') decommission(@Param('id',ParseIntPipe)id:number){return this.machineryService.decommission(id)}
+  @Patch(':id') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') update(@Param('id',ParseIntPipe)id:number,@Body()dto:{code?:string;type?:string;siteId?:number},@Req()request:Request & {user:{id:number}}){return this.machineryService.update(id,dto,request.user.id)}
+  @Patch(':id/decommission') @UseGuards(RolesGuard) @Roles('ADMINISTRATOR') decommission(@Param('id',ParseIntPipe)id:number,@Req()request:Request & {user:{id:number}}){return this.machineryService.decommission(id,request.user.id)}
 
   @Get(':id')
   @ApiOkResponse({ type: MachineResponseDto })
